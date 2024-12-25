@@ -101,7 +101,7 @@ void PerformanceWindow::Show(float fps, float ms)
 
     // Graphs for FPS + MS
     // min = 0, max = s_FpsScale or s_MsScale
-    ImGui::PlotLines("FPS (60 frames)", 
+    ImGui::PlotLines("FPS", 
                      s_FpsHistory, 
                      IM_ARRAYSIZE(s_FpsHistory),
                      0, 
@@ -123,7 +123,7 @@ void PerformanceWindow::Show(float fps, float ms)
 
     // Show OpenGL calls + Triangles
     ImGui::Text("OpenGL Calls: %d", m_OpenGLCallCount);
-    ImGui::PlotLines("GL Calls (60 frames)", 
+    ImGui::PlotLines("GL Calls", 
                      s_CallsHistory, 
                      IM_ARRAYSIZE(s_CallsHistory),
                      0, 
@@ -133,7 +133,7 @@ void PerformanceWindow::Show(float fps, float ms)
                      ImVec2(0, 50));
 
     ImGui::Text("Triangles: %d", m_TriangleCount);
-    ImGui::PlotHistogram("Triangles (60 frames)", 
+    ImGui::PlotHistogram("Triangles", 
                          s_TriangleHistory, 
                          IM_ARRAYSIZE(s_TriangleHistory),
                          0, 
