@@ -1,221 +1,246 @@
 #include "InspectorWindow.h"
-#include <cstdio>  // for printf, if needed
-#include <cstring> // for strcpy, if needed
+#include <cstdio>   // for debugging or printing if needed
+#include <cstring>  // for strcpy, if needed
 
-void InspectorWindow::Show(Transform &transform, Script &script)
+void InspectorWindow::Show(Transform& transform, Script& script)
 {
-    // We can push additional style for a more Unity/Godot-like inspector
+    // Increase window/item spacing for a cleaner look
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(12, 12));
-    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(6, 4));
-    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(8, 8));
-
-    // Optional: a slight color for window background
-    // (If you want to override the theme’s default)
-    // ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.12f, 0.12f, 0.12f, 1.f));
+    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding,  ImVec2(6, 4));
+    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing,   ImVec2(10, 10));
 
     if (ImGui::Begin("Inspector"))
     {
-        // Title or header-like text
-        {
-            // A mild accent color for the header text
-            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.9f, 0.85f, 0.2f, 1.f));
-            ImGui::TextUnformatted("Selected Object Inspector");
-            ImGui::PopStyleColor();
-        }
-
+        // Title label (white text)
+        ImGui::TextUnformatted("Selected Object Inspector");
         ImGui::Separator();
         ImGui::Spacing();
 
-        // ----------------
-        // TRANSFORM
-        // ----------------
+        // ===========================
+        // 1) TRANSFORM
+        // ===========================
+        // Color the Transform header
+        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 0.4f, 1.0f)); 
+        bool transformOpen = ImGui::CollapsingHeader("Transform##Main", ImGuiTreeNodeFlags_DefaultOpen);
+        ImGui::PopStyleColor();
+
+        if (transformOpen)
         {
-            // A bit of color or bold for the header
-            // Inside your InspectorWindow::Show(...) method,
-            // specifically within the Transform section:
-
-            if (ImGui::CollapsingHeader("Transform", ImGuiTreeNodeFlags_DefaultOpen))
+            if (ImGui::IsItemHovered())
             {
-                // Provide a quick tooltip/hint on hover
-                if (ImGui::IsItemHovered())
+                ImGui::BeginTooltip();
+                ImGui::TextUnformatted("Controls the object's Position, Rotation, and Scale.");
+                ImGui::EndTooltip();
+            }
+
+            // -----------------------------------
+            // Position
+            // -----------------------------------
+            ImGui::TextUnformatted("Position");
+            ImGui::Spacing();
+
+            {
+                // We'll assign colors for X, Y, Z buttons
+                // (normal, hovered, active)
+                static const ImVec4 colX      = ImVec4(1.0f, 0.4f, 0.4f, 1.0f);
+                static const ImVec4 colXHover = ImVec4(1.0f, 0.6f, 0.6f, 1.0f);
+                static const ImVec4 colXActive= ImVec4(1.0f, 0.2f, 0.2f, 1.0f);
+
+                static const ImVec4 colY      = ImVec4(0.4f, 1.0f, 0.4f, 1.0f);
+                static const ImVec4 colYHover = ImVec4(0.6f, 1.0f, 0.6f, 1.0f);
+                static const ImVec4 colYActive= ImVec4(0.2f, 1.0f, 0.2f, 1.0f);
+
+                static const ImVec4 colZ      = ImVec4(0.4f, 0.4f, 1.0f, 1.0f);
+                static const ImVec4 colZHover = ImVec4(0.6f, 0.6f, 1.0f, 1.0f);
+                static const ImVec4 colZActive= ImVec4(0.2f, 0.2f, 1.0f, 1.0f);
+
+                const char* axisNames[3] = { "X", "Y", "Z" };
+                // We'll reference transform.position here
+                float* pos = transform.position;
+
+                ImGui::PushID("PositionRow");
+                for (int i = 0; i < 3; i++)
                 {
-                    ImGui::BeginTooltip();
-                    ImGui::TextUnformatted("Controls the object's Position, Rotation, and Scale.");
-                    ImGui::EndTooltip();
-                }
+                    // Determine color set
+                    ImVec4 col, colH, colA;
+                    if (i == 0) { col = colX; colH = colXHover; colA = colXActive; }
+                    else if (i == 1) { col = colY; colH = colYHover; colA = colYActive; }
+                    else { col = colZ; colH = colZHover; colA = colZActive; }
 
-                // ------------------------------------------
-                // Position
-                // ------------------------------------------
-                if (ImGui::TreeNodeEx("Position", ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_SpanAvailWidth))
-                {
-                    // We'll do a custom layout with color-coded X, Y, Z labels
-                    ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 1.0f), "Position:");
-                    ImGui::Spacing();
+                    // Push color style for button
+                    ImGui::PushStyleColor(ImGuiCol_Button, col);
+                    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, colH);
+                    ImGui::PushStyleColor(ImGuiCol_ButtonActive, colA);
 
-                    // Colors for each axis: X=red, Y=green, Z=blue
-                    ImVec4 colX(1.0f, 0.4f, 0.4f, 1.0f);
-                    ImVec4 colY(0.4f, 1.0f, 0.4f, 1.0f);
-                    ImVec4 colZ(0.4f, 0.4f, 1.0f, 1.0f);
-
-                    // Axis labels for reference
-                    const char *axisLabels[3] = {"X", "Y", "Z"};
-                    ImVec4 axisColors[3] = {colX, colY, colZ};
-                    float *pos = transform.position;
-
-                    // We'll lay them out on one line with spacing
-                    ImGui::PushID("PositionFields");
-                    for (int i = 0; i < 3; i++)
+                    // Small button with the axis name
+                    if (ImGui::Button(axisNames[i], ImVec2(20, 0)))
                     {
-                        // Color-coded label
-                        ImGui::TextColored(axisColors[i], "%s", axisLabels[i]);
-                        ImGui::SameLine();
-
-                        // We push another ID so each DragFloat is unique
-                        ImGui::PushID(i);
-                        ImGui::SetNextItemWidth(60.0f); // or -1 for full stretch
-                        ImGui::DragFloat("##Pos", &pos[i], 0.1f);
-                        ImGui::PopID();
-
-                        // Small spacing between each axis
-                        if (i < 2)
-                        {
-                            ImGui::SameLine(0, 15);
-                        }
+                        // No action on click, but we have a box with color
                     }
-                    ImGui::PopID();
 
-                    ImGui::TreePop();
+                    ImGui::PopStyleColor(3);
+
+                    ImGui::SameLine();
+                    ImGui::SetNextItemWidth(60.0f);
+                    ImGui::DragFloat((std::string("##Pos") + axisNames[i]).c_str(), &pos[i], 0.1f);
+
+                    if (i < 2) ImGui::SameLine(0, 15);
                 }
-                ImGui::Spacing();
-
-                // ------------------------------------------
-                // Rotation
-                // ------------------------------------------
-                if (ImGui::TreeNodeEx("Rotation", ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_SpanAvailWidth))
-                {
-                    ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 1.0f), "Rotation:");
-                    ImGui::Spacing();
-
-                    ImVec4 colX(1.0f, 0.4f, 0.4f, 1.0f);
-                    ImVec4 colY(0.4f, 1.0f, 0.4f, 1.0f);
-                    ImVec4 colZ(0.4f, 0.4f, 1.0f, 1.0f);
-
-                    const char *axisLabels[3] = {"X", "Y", "Z"};
-                    ImVec4 axisColors[3] = {colX, colY, colZ};
-                    float *rot = transform.rotation;
-
-                    ImGui::PushID("RotationFields");
-                    for (int i = 0; i < 3; i++)
-                    {
-                        ImGui::TextColored(axisColors[i], "%s", axisLabels[i]);
-                        ImGui::SameLine();
-
-                        ImGui::PushID(i);
-                        ImGui::SetNextItemWidth(60.0f);
-                        ImGui::DragFloat("##Rot", &rot[i], 0.1f);
-                        ImGui::PopID();
-
-                        if (i < 2)
-                        {
-                            ImGui::SameLine(0, 15);
-                        }
-                    }
-                    ImGui::PopID();
-
-                    ImGui::TreePop();
-                }
-                ImGui::Spacing();
-
-                // ------------------------------------------
-                // Scale
-                // ------------------------------------------
-                if (ImGui::TreeNodeEx("Scale", ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_SpanAvailWidth))
-                {
-                    ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 1.0f), "Scale:");
-                    ImGui::Spacing();
-
-                    ImVec4 colX(1.0f, 0.4f, 0.4f, 1.0f);
-                    ImVec4 colY(0.4f, 1.0f, 0.4f, 1.0f);
-                    ImVec4 colZ(0.4f, 0.4f, 1.0f, 1.0f);
-
-                    const char *axisLabels[3] = {"X", "Y", "Z"};
-                    ImVec4 axisColors[3] = {colX, colY, colZ};
-                    float *scl = transform.scale;
-
-                    ImGui::PushID("ScaleFields");
-                    for (int i = 0; i < 3; i++)
-                    {
-                        ImGui::TextColored(axisColors[i], "%s", axisLabels[i]);
-                        ImGui::SameLine();
-
-                        ImGui::PushID(i);
-                        ImGui::SetNextItemWidth(60.0f);
-                        ImGui::DragFloat("##Scale", &scl[i], 0.1f);
-                        ImGui::PopID();
-
-                        if (i < 2)
-                        {
-                            ImGui::SameLine(0, 15);
-                        }
-                    }
-                    ImGui::PopID();
-
-                    ImGui::TreePop();
-                }
-
-                ImGui::Spacing();
-                ImGui::Separator();
+                ImGui::PopID();
             }
 
             ImGui::Spacing();
+            ImGui::Separator();
+
+            // -----------------------------------
+            // Rotation
+            // -----------------------------------
+            ImGui::TextUnformatted("Rotation");
+            ImGui::Spacing();
+
+            {
+                // Same approach, but referencing transform.rotation
+                const char* axisNames[3] = { "X", "Y", "Z" };
+                float* rot = transform.rotation;
+
+                // We can reuse the same color sets
+                ImGui::PushID("RotationRow");
+                for (int i = 0; i < 3; i++)
+                {
+                    // Decide color sets for X, Y, Z
+                    ImVec4 col, colH, colA;
+                    if (i == 0) {
+                        col = ImVec4(1.0f, 0.4f, 0.4f, 1.0f);
+                        colH= ImVec4(1.0f, 0.6f, 0.6f, 1.0f);
+                        colA= ImVec4(1.0f, 0.2f, 0.2f, 1.0f);
+                    }
+                    else if (i == 1) {
+                        col = ImVec4(0.4f, 1.0f, 0.4f, 1.0f);
+                        colH= ImVec4(0.6f, 1.0f, 0.6f, 1.0f);
+                        colA= ImVec4(0.2f, 1.0f, 0.2f, 1.0f);
+                    }
+                    else {
+                        col = ImVec4(0.4f, 0.4f, 1.0f, 1.0f);
+                        colH= ImVec4(0.6f, 0.6f, 1.0f, 1.0f);
+                        colA= ImVec4(0.2f, 0.2f, 1.0f, 1.0f);
+                    }
+
+                    ImGui::PushStyleColor(ImGuiCol_Button, col);
+                    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, colH);
+                    ImGui::PushStyleColor(ImGuiCol_ButtonActive, colA);
+
+                    if (ImGui::Button(axisNames[i], ImVec2(20, 0)))
+                    {
+                        // No action
+                    }
+                    ImGui::PopStyleColor(3);
+
+                    ImGui::SameLine();
+                    ImGui::SetNextItemWidth(60.0f);
+                    ImGui::DragFloat((std::string("##Rot") + axisNames[i]).c_str(), &rot[i], 0.1f);
+
+                    if (i < 2) ImGui::SameLine(0, 15);
+                }
+                ImGui::PopID();
+            }
+
+            ImGui::Spacing();
+            ImGui::Separator();
+
+            // -----------------------------------
+            // Scale
+            // -----------------------------------
+            ImGui::TextUnformatted("Scale");
+            ImGui::Spacing();
+
+            {
+                const char* axisNames[3] = { "X", "Y", "Z" };
+                float* scl = transform.scale;
+
+                ImGui::PushID("ScaleRow");
+                for (int i = 0; i < 3; i++)
+                {
+                    // same color approach
+                    ImVec4 col, colH, colA;
+                    if (i == 0) {
+                        col = ImVec4(1.0f, 0.4f, 0.4f, 1.0f);
+                        colH= ImVec4(1.0f, 0.6f, 0.6f, 1.0f);
+                        colA= ImVec4(1.0f, 0.2f, 0.2f, 1.0f);
+                    }
+                    else if (i == 1) {
+                        col = ImVec4(0.4f, 1.0f, 0.4f, 1.0f);
+                        colH= ImVec4(0.6f, 1.0f, 0.6f, 1.0f);
+                        colA= ImVec4(0.2f, 1.0f, 0.2f, 1.0f);
+                    }
+                    else {
+                        col = ImVec4(0.4f, 0.4f, 1.0f, 1.0f);
+                        colH= ImVec4(0.6f, 0.6f, 1.0f, 1.0f);
+                        colA= ImVec4(0.2f, 0.2f, 1.0f, 1.0f);
+                    }
+
+                    ImGui::PushStyleColor(ImGuiCol_Button, col);
+                    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, colH);
+                    ImGui::PushStyleColor(ImGuiCol_ButtonActive, colA);
+
+                    if (ImGui::Button(axisNames[i], ImVec2(20, 0)))
+                    {
+                        // No action
+                    }
+                    ImGui::PopStyleColor(3);
+
+                    ImGui::SameLine();
+                    ImGui::SetNextItemWidth(60.0f);
+                    ImGui::DragFloat((std::string("##Scl") + axisNames[i]).c_str(), &scl[i], 0.1f);
+
+
+                    if (i < 2) ImGui::SameLine(0, 15);
+                }
+                ImGui::PopID();
+            }
+
+            ImGui::Spacing();
+            ImGui::Separator();
         }
 
-        // ----------------
-        // SCRIPT
-        // ----------------
+        ImGui::Spacing();
+
+        // ===========================
+        // 2) SCRIPT
+        // ===========================
+        // We keep script text in white
+        if (ImGui::CollapsingHeader("Script##Main", ImGuiTreeNodeFlags_DefaultOpen))
         {
-            if (ImGui::CollapsingHeader("Script##Inspector", ImGuiTreeNodeFlags_DefaultOpen))
+            if (ImGui::IsItemHovered())
             {
-                if (ImGui::IsItemHovered())
-                {
-                    ImGui::BeginTooltip();
-                    ImGui::TextUnformatted("Attach a script (logic) to this object.");
-                    ImGui::EndTooltip();
-                }
-
-                // Script Name
-                ImGui::TextColored(ImVec4(0.9f, 0.9f, 0.9f, 1.0f), "Script Name:");
-                ImGui::SameLine();
-                {
-                    // We'll allocate a buffer to edit the script name
-                    char buffer[128];
-                    // Copy the current name into the buffer
-                    std::snprintf(buffer, sizeof(buffer), "%s", script.scriptName.c_str());
-
-                    // Provide an input text
-                    ImGui::SetNextItemWidth(-1);
-                    if (ImGui::InputText("##ScriptName", buffer, sizeof(buffer)))
-                    {
-                        script.scriptName = buffer;
-                    }
-                }
-
-                // Enabled?
-                ImGui::Checkbox("Enabled##ScriptEnabled", &script.enabled);
-
-                // In a real engine, you might display all public fields of the script here
-                // e.g., float moveSpeed, int health, etc.
-
-                ImGui::Spacing();
-                ImGui::Separator();
+                ImGui::BeginTooltip();
+                ImGui::TextUnformatted("Attach a script or logic component here.");
+                ImGui::EndTooltip();
             }
+
+            ImGui::TextUnformatted("Script Name:");
+            ImGui::SameLine();
+
+            {
+                char buffer[128];
+                std::snprintf(buffer, sizeof(buffer), "%s", script.scriptName.c_str());
+                ImGui::SetNextItemWidth(-1);
+                if (ImGui::InputText("##ScriptName", buffer, sizeof(buffer)))
+                {
+                    script.scriptName = buffer;
+                }
+            }
+
+            ImGui::Spacing();
+
+            ImGui::TextUnformatted("Script Enabled:");
+            ImGui::SameLine();
+            ImGui::Checkbox("##ScriptEnabled", &script.enabled);
+
+            ImGui::Spacing();
+            ImGui::Separator();
         }
     }
     ImGui::End();
-
-    // Pop the potential override color if used
-    // ImGui::PopStyleColor();
 
     // Restore style
     ImGui::PopStyleVar(3);

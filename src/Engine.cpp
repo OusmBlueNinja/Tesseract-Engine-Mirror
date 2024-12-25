@@ -121,10 +121,10 @@ void MyEngine::Run()
         double current_time = glfwGetTime();
         double delta = current_time - m_LastTime;
         m_FrameCount++;
-        if (delta >= 1.0)
+        if (delta >= 0.1)
         {
             m_Fps = (float)(m_FrameCount / delta);
-            m_Ms  = 1000.0f / m_Fps;
+            m_Ms  = 100.0f / m_Fps;
             m_FrameCount = 0;
             m_LastTime = current_time;
         }
