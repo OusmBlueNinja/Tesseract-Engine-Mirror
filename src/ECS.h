@@ -8,6 +8,7 @@
 #include <memory>
 #include <algorithm>
 #include <string>
+#include <stdexcept> // Added to fix 'runtime_error' errors
 
 // Forward declaration
 class ComponentManager;
@@ -117,7 +118,6 @@ public:
         const std::type_index typeName = typeid(T);
         if (componentArrays.find(typeName) != componentArrays.end()) {
             // Component already registered
-            // Logger is not accessible here; handle logging in main.cpp
             return;
         }
         componentArrays[typeName] = std::make_shared<ComponentArray<T>>();
