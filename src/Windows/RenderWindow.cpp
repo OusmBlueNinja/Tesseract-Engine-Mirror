@@ -149,7 +149,7 @@ void RenderWindow::InitGLResources()
     // 3) Load TEXTURE from the asset manager
     // ----------------------------------------------------
     {
-        void* texAsset = g_AssetManager.loadAsset(AssetType::TEXTURE, "assets/textures/default.png");
+        void* texAsset = g_AssetManager.loadAsset(AssetType::TEXTURE, "assets/textures/wood.png");
         if (!texAsset)
         {
             fprintf(stderr, "[RenderWindow] Failed to load texture.\n");
