@@ -6,6 +6,10 @@
 #include "Windows/RenderWindow.h"
 #include "Windows/PerformanceWindow.h"
 #include "Windows/LoggerWindow.h"
+#include "Engine/AssetManager.h"
+
+//#define DEBUG
+#include "gcml.h"
 
 // Forward declaration to avoid including GLFW in the header if you prefer
 struct GLFWwindow;
@@ -14,6 +18,8 @@ struct GLFWwindow;
 class MyEngine
 {
 public:
+    
+
     bool Init(int width, int height, const std::string& title);
     void Run();
     void Cleanup();
@@ -25,6 +31,8 @@ private:
     void ShowDockSpace();
 
 private:
+
+
     GLFWwindow* m_Window = nullptr;
     bool m_Running = false;
 

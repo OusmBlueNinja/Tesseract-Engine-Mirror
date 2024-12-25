@@ -1,61 +1,85 @@
 #include "RenderWindow.h"
 #include <GL/glew.h>
-#include <glm/gtc/matrix_transform.hpp> // for perspective, translate, rotate
-#include <glm/gtc/type_ptr.hpp>         // for value_ptr
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 #include "imgui.h"
 
-// A simple data structure for a colored cube
-// position (x,y,z), color(r,g,b)
-static float g_CubeVertices[] = {
-    //  x,     y,     z,     r, g, b
-    // Front face
-    -1.f, -1.f,  1.f,   1.f, 0.f, 0.f,  // bottom-left
-     1.f, -1.f,  1.f,   1.f, 0.f, 0.f,  // bottom-right
-     1.f,  1.f,  1.f,   1.f, 0.f, 0.f,  // top-right
-    -1.f,  1.f,  1.f,   1.f, 0.f, 0.f,  // top-left
+// Include your AssetManager header
 
-    // Back face
-    -1.f, -1.f, -1.f,   0.f, 1.f, 0.f,
-     1.f, -1.f, -1.f,   0.f, 1.f, 0.f,
-     1.f,  1.f, -1.f,   0.f, 1.f, 0.f,
-    -1.f,  1.f, -1.f,   0.f, 1.f, 0.f,
+// Assume we have an extern or global asset manager declared somewhere
+// e.g. in "Engine.cpp":    AssetManager g_AssetManager;
+// and in "AssetManager.h": extern AssetManager g_AssetManager;
+extern AssetManager g_AssetManager;
+
+// --------------------------------------------------
+// Cube vertex data and indices (unchanged)
+// --------------------------------------------------
+static float g_CubeVertices[] =
+{
+    // FRONT (z=+1)
+    -1.f, -1.f,  1.f,   0.f, 0.f,
+     1.f, -1.f,  1.f,   1.f, 0.f,
+     1.f,  1.f,  1.f,   1.f, 1.f,
+    -1.f,  1.f,  1.f,   0.f, 1.f,
+
+    // BACK (z=-1)
+    -1.f, -1.f, -1.f,   1.f, 0.f,
+     1.f, -1.f, -1.f,   0.f, 0.f,
+     1.f,  1.f, -1.f,   0.f, 1.f,
+    -1.f,  1.f, -1.f,   1.f, 1.f,
+
+    // LEFT (x=-1)
+    -1.f, -1.f, -1.f,   0.f, 0.f,
+    -1.f, -1.f,  1.f,   1.f, 0.f,
+    -1.f,  1.f,  1.f,   1.f, 1.f,
+    -1.f,  1.f, -1.f,   0.f, 1.f,
+
+    // RIGHT (x=+1)
+     1.f, -1.f, -1.f,   1.f, 0.f,
+     1.f, -1.f,  1.f,   0.f, 0.f,
+     1.f,  1.f,  1.f,   0.f, 1.f,
+     1.f,  1.f, -1.f,   1.f, 1.f,
+
+    // TOP (y=+1)
+    -1.f,  1.f, -1.f,   0.f, 0.f,
+     1.f,  1.f, -1.f,   1.f, 0.f,
+     1.f,  1.f,  1.f,   1.f, 1.f,
+    -1.f,  1.f,  1.f,   0.f, 1.f,
+
+    // BOTTOM (y=-1)
+    -1.f, -1.f, -1.f,   1.f, 0.f,
+     1.f, -1.f, -1.f,   0.f, 0.f,
+     1.f, -1.f,  1.f,   0.f, 1.f,
+    -1.f, -1.f,  1.f,   1.f, 1.f,
 };
 
-static unsigned int g_CubeIndices[] = {
-    // Front face
-    0, 1, 2,
-    2, 3, 0,
-
-    // Back face
-    5, 4, 7,
-    7, 6, 5,
-
-    // Left face
-    4, 0, 3,
-    3, 7, 4,
-
-    // Right face
-    1, 5, 6,
-    6, 2, 1,
-
-    // Top face
-    3, 2, 6,
-    6, 7, 3,
-
-    // Bottom face
-    4, 5, 1,
-    1, 0, 4
+static unsigned int g_CubeIndices[] =
+{
+    // Front
+    0,1,2,   2,3,0,
+    // Back
+    4,5,6,   6,7,4,
+    // Left
+    8,9,10,  10,11,8,
+    // Right
+    12,13,14, 14,15,12,
+    // Top
+    16,17,18, 18,19,16,
+    // Bottom
+    20,21,22, 22,23,20
 };
 
+// --------------------------------------------------
+// Show() - ImGui window to display the FBO
+// --------------------------------------------------
 void RenderWindow::Show()
 {
     ImGui::Begin("OpenGL Output");
 
     ImVec2 size = ImGui::GetContentRegionAvail();
-    int w = (int)size.x;
-    int h = (int)size.y;
+    int w = static_cast<int>(size.x);
+    int h = static_cast<int>(size.y);
 
-    // Lazy init, so we only do it once
     if (!m_Initialized)
     {
         InitGLResources();
@@ -64,7 +88,6 @@ void RenderWindow::Show()
 
     if (w > 0 && h > 0)
     {
-        // Re-create FBO if size changed
         if (w != m_LastWidth || h != m_LastHeight)
         {
             m_FBO.Create(w, h);
@@ -72,10 +95,7 @@ void RenderWindow::Show()
             m_LastHeight = h;
         }
 
-        // Render our scene to the FBO
         RenderSceneToFBO();
-
-        // Display the FBO texture in ImGui
         ImGui::Image(m_FBO.GetTextureID(), size, ImVec2(0,0), ImVec2(1,1));
     }
     else
@@ -86,88 +106,104 @@ void RenderWindow::Show()
     ImGui::End();
 }
 
+// --------------------------------------------------
+// InitGLResources() - Setup VAO/VBO/EBO and load texture
+// --------------------------------------------------
 void RenderWindow::InitGLResources()
 {
-    // 1) Load and compile our unlit shader
-    //    Adjust paths if needed. Ex: "shaders/UnlitMaterial.vert"
+    // 1) Load & compile our unlit texture shader (with UV support)
     if (!m_Shader.Load("shaders/UnlitMaterial.vert", "shaders/UnlitMaterial.frag"))
     {
-        // Fail gracefully or throw
-        fprintf(stderr, "[RenderWindow] Failed to load UnlitMaterial shader.\n");
+        fprintf(stderr, "[RenderWindow] Failed to load unlit material shader.\n");
         return;
     }
 
-    // 2) Create VAO
+    // 2) Create a VAO for the cube
     glGenVertexArrays(1, &m_VAO);
     glBindVertexArray(m_VAO);
 
-    // 3) Create VBO
+    // 3) Create a VBO
     glGenBuffers(1, &m_VBO);
     glBindBuffer(GL_ARRAY_BUFFER, m_VBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(g_CubeVertices), g_CubeVertices, GL_STATIC_DRAW);
 
-    // 4) Create EBO
+    // 4) Create an EBO
     glGenBuffers(1, &m_EBO);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_EBO);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(g_CubeIndices), g_CubeIndices, GL_STATIC_DRAW);
 
-    // 5) Setup vertex attribs:
-    //    layout(location = 0) => aPos (3 floats)
-    //    layout(location = 1) => aColor (3 floats)
-    // Stride: 6 floats total
-    // Positions start at offset 0
-    // Color starts at offset 3 * sizeof(float)
-
-    // Position
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+    // 5) Setup vertex attribs
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
 
-    // Color
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float),
-                          (void*)(3 * sizeof(float)));
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE,
+                          5 * sizeof(float), (void*)(3 * sizeof(float)));
     glEnableVertexAttribArray(1);
 
-    // Unbind VAO (optional, but good practice)
     glBindVertexArray(0);
+
+    // 6) Load the texture via AssetManager
+    //    This call returns a void*, which we cast to a GLuint
+    {
+        void* assetPtr = g_AssetManager.loadAsset(AssetType::TEXTURE, "assets/textures/default.png");
+        if (!assetPtr)
+        {
+            fprintf(stderr, "[RenderWindow] Failed to load texture via AssetManager.\n");
+        }
+        else
+        {
+            // Convert void* to GLuint
+            m_TextureID = static_cast<GLuint>(reinterpret_cast<uintptr_t>(assetPtr));
+        }
+    }
 }
 
+// --------------------------------------------------
+// RenderSceneToFBO() - Offscreen render of the spinning cube
+// --------------------------------------------------
 void RenderWindow::RenderSceneToFBO()
 {
-    // Spin
-    m_RotationAngle += 0.5f;
+    m_RotationAngle += 0.5f; // degrees per frame
 
     m_FBO.Bind();
     glViewport(0, 0, m_LastWidth, m_LastHeight);
 
     glEnable(GL_DEPTH_TEST);
+
     glClearColor(0.1f, 0.15f, 0.2f, 1.f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    // Use our unlit shader
+    // Use our unlit texture shader
     m_Shader.Use();
 
-    // Build a MVP matrix with GLM (model * view * proj)
-    // 1) Model: rotate around Y or diagonal axis
-    glm::mat4 model = glm::mat4(1.0f);
-    model = glm::rotate(model, glm::radians(m_RotationAngle), glm::vec3(1.0f, 1.0f, 0.0f));
+    // Build MVP
+    glm::mat4 model = glm::rotate(glm::mat4(1.0f),
+                                  glm::radians(m_RotationAngle),
+                                  glm::vec3(1.f, 1.f, 0.f));
 
-    // 2) View: move camera back by 5 on Z
-    glm::mat4 view = glm::translate(glm::mat4(1.0f), glm::vec3(0.f, 0.f, -5.f));
+    glm::mat4 view  = glm::translate(glm::mat4(1.0f), glm::vec3(0.f, 0.f, -5.f));
+    float aspect     = (m_LastHeight != 0) ? (float)m_LastWidth / (float)m_LastHeight : 1.0f;
+    glm::mat4 proj   = glm::perspective(glm::radians(45.f), aspect, 0.1f, 100.f);
+    glm::mat4 mvp    = proj * view * model;
 
-    // 3) Projection: perspective
-    float aspect = (float)m_LastWidth / (float)m_LastHeight;
-    glm::mat4 projection = glm::perspective(glm::radians(45.f), aspect, 0.1f, 100.f);
-
-    glm::mat4 mvp = projection * view * model;
-
-    // Upload MVP to the shader
+    // Pass MVP
     GLint mvpLoc = glGetUniformLocation(m_Shader.GetProgramID(), "uMVP");
-    glUniformMatrix4fv(mvpLoc, 1, GL_FALSE, &mvp[0][0]);
+    glUniformMatrix4fv(mvpLoc, 1, GL_FALSE, glm::value_ptr(mvp));
 
-    // Draw the cube with our VAO
+    // Texture uniform -> unit 0
+    GLint texLoc = glGetUniformLocation(m_Shader.GetProgramID(), "uTexture");
+    glUniform1i(texLoc, 0);
+
+    // Bind the texture from asset manager
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, m_TextureID);
+
+    // Draw
     glBindVertexArray(m_VAO);
     glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
 
+    // Cleanup
     glBindVertexArray(0);
+    glBindTexture(GL_TEXTURE_2D, 0);
     FBO::Unbind();
 }

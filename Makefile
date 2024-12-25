@@ -12,6 +12,7 @@ BUILD_DIR := build
 # Include Directories
 GLFW_INCLUDE := C:/libraries/glfw/include
 INCLUDE_DIRS := $(SRC_DIR) $(VENDOR_DIRS) $(GLFW_INCLUDE) vendor/stb/include
+INCLUDE_DIRS := $(SRC_DIR) $(VENDOR_DIRS) $(GLFW_INCLUDE) vendor/gcml
 INCLUDES := $(addprefix -I, $(INCLUDE_DIRS))
 
 # Update compiler flags with include paths

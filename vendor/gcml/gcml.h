@@ -48,7 +48,7 @@
      * @brief Prints debug messages with file name, line number, and function name.
      */
     #define DEBUG_PRINT(fmt, ...) \
-        fprintf(stderr, "DEBUG: %s:%d:%s(): " fmt "\n", \
+        fprintf(stderr, "%s:%d:%s(): " fmt "\n", \
                 __FILE__, __LINE__, __func__, ##__VA_ARGS__)
 #else
     #define DEBUG_PRINT(fmt, ...) // No operation in release builds

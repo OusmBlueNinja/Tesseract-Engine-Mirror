@@ -3,9 +3,15 @@
 #include <cstdio>
 #include "Engine.h"
 
+
+
 int main()
 {
+    DEBUG_PRINT("[START] Creating Global Engine ");
+
     MyEngine engine;
+    DEBUG_PRINT("[OK] Creating Global Engine ");
+
     // Initialize the engine (creates GLFW window, sets up ImGui, etc.)
     if (!engine.Init(1280, 720, "Tesseract Engine"))
     {

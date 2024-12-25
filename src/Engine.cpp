@@ -1,5 +1,11 @@
 // src/Engine.cpp
 
+
+
+// Settings
+
+#define VSync 0
+
 #include "Engine.h"
 #include <cstdio>
 #include <chrono>
@@ -15,8 +21,15 @@
 #include "Windows/PerformanceWindow.h"
 #include "Windows/LoggerWindow.h"
 
+
+
+
+
+AssetManager g_AssetManager;
+
 bool MyEngine::Init(int width, int height, const std::string& title)
 {
+    DEBUG_PRINT("[START] Engine Init");
     // ------------------------------------------
     // 1) Initialize GLFW
     // ------------------------------------------
@@ -40,7 +53,7 @@ bool MyEngine::Init(int width, int height, const std::string& title)
         return false;
     }
     glfwMakeContextCurrent(m_Window);
-    glfwSwapInterval(1); // vsync
+    glfwSwapInterval(VSync); // vsync
 
     // ------------------------------------------
     // 2) Initialize GLEW
@@ -81,11 +94,15 @@ bool MyEngine::Init(int width, int height, const std::string& title)
 
     m_Running = true;
     m_LastTime = glfwGetTime();
+    DEBUG_PRINT("[OK] Engine Init ");
+
     return true;
 }
 
 void MyEngine::Run()
 {
+    DEBUG_PRINT("[START] Engine Run ");
+    
     while (!glfwWindowShouldClose(m_Window) && m_Running)
     {
         // Poll
@@ -112,15 +129,23 @@ void MyEngine::Run()
         // Show our windows
         m_RenderWindow->Show();                    // The spinning triangle as ImGui::Image
         m_PerformanceWindow->Show(m_Fps, m_Ms);    // FPS & ms
-        m_LoggerWindow->Show();                   // Logs
+        m_LoggerWindow->Show();                    // Logs
+
+        // After rendering
+        m_PerformanceWindow->UpdatePerformanceStats(-1, -1);
+
 
         // End frame
         EndFrame();
     }
+    DEBUG_PRINT("[OK] Engine Run ");
+
 }
 
 void MyEngine::Cleanup()
 {
+    DEBUG_PRINT("[START] Engine Cleanup ");
+    
     // ImGui cleanup
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
@@ -135,6 +160,8 @@ void MyEngine::Cleanup()
     glfwTerminate();
 
     m_Running = false;
+    DEBUG_PRINT("[OK] Engine Cleanup ");
+
 }
 
 void MyEngine::BeginFrame()
