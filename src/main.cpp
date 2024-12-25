@@ -7,21 +7,17 @@
 #include "imgui_impl_opengl3.h"
 #include "../IconsFontAwesome6.h" // Include the Font Awesome icons header
 
-
 #include <iostream>
 #include <stdio.h>
 #include <vector>
 #include <string>
 
-#define DEBUG 1
+#include "ECS.h" // Include the ECS header
 
-#ifdef DEBUG
-#define LOGPOINT(msg) std::cout << "[TESRCT] [" << __func__ << ":" << __LINE__ << "] " << (msg) << std::endl;
-#else
-#define LOGPOINT(msg)
-#endif
-
+// =====================
 // Logger Implementation
+// =====================
+
 enum class LogLevel { INFO, WARNING, ERROR };
 
 struct LogEntry {
@@ -54,19 +50,44 @@ private:
     size_t max_entries;
 };
 
+#define DEBUG 1
 
+#ifdef DEBUG
+#define LOGPOINT(msg) std::cout << "[TESRCT] [" << __func__ << ":" << __LINE__ << "] " << (msg) << std::endl;
+#else
+#define LOGPOINT(msg)
+#endif
+
+// =====================
+// ECS Instances
+// =====================
+
+EntityManager entityManager;
+ComponentManager componentManager;
+
+// =====================
 // Function Declarations
+// =====================
+
 void ShowMainMenuBar();
 void ShowViewport();
 void ShowConsole(bool* p_open);
+void ShowEntityTree(EntityManager& em, ComponentManager& cm, Entity& selectedEntity);
+void ShowInspector(EntityManager& em, ComponentManager& cm, Entity selectedEntity);
 
+// =====================
 // Callback for GLFW errors
+// =====================
+
 static void glfw_error_callback(int error, const char* description)
 {
     fprintf(stderr, "GLFW Error %d: %s\n", error, description);
 }
 
+// =====================
 // Helper function to get color based on log level
+// =====================
+
 ImVec4 GetColorForLogLevel(LogLevel level)
 {
     switch (level)
@@ -82,11 +103,229 @@ ImVec4 GetColorForLogLevel(LogLevel level)
     }
 }
 
+// =====================
+// UI Function Definitions
+// =====================
+
+// 1. Main Menu Bar
+void ShowMainMenuBar()
+{
+    if (ImGui::BeginMainMenuBar())
+    {
+        if (ImGui::BeginMenu("File"))
+        {
+            if (ImGui::MenuItem("New", "Ctrl+N")) { /* Handle New */ }
+            if (ImGui::MenuItem("Open", "Ctrl+O")) { /* Handle Open */ }
+            if (ImGui::MenuItem("Save", "Ctrl+S")) { /* Handle Save */ }
+            ImGui::Separator();
+            if (ImGui::MenuItem("Exit")) { /* Handle Exit */ }
+            ImGui::EndMenu();
+        }
+        if (ImGui::BeginMenu("Edit"))
+        {
+            if (ImGui::MenuItem("Undo", "Ctrl+Z")) { /* Handle Undo */ }
+            if (ImGui::MenuItem("Redo", "Ctrl+Y")) { /* Handle Redo */ }
+            ImGui::Separator();
+            if (ImGui::MenuItem("Copy", "Ctrl+C")) { /* Handle Copy */ }
+            if (ImGui::MenuItem("Paste", "Ctrl+V")) { /* Handle Paste */ }
+            ImGui::EndMenu();
+        }
+        if (ImGui::BeginMenu("View"))
+        {
+            static bool show_console = true;
+            if (ImGui::MenuItem("Show Console", NULL, &show_console)) { /* Toggle Console */ }
+            // Add more view toggles as needed
+            ImGui::EndMenu();
+        }
+        ImGui::EndMainMenuBar();
+    }
+}
+
+// 2. Viewport Panel
+void ShowViewport()
+{
+    ImGui::Begin("Viewport", NULL, ImGuiWindowFlags_NoCollapse);
+
+    // Get the size of the viewport
+    ImVec2 viewport_size = ImGui::GetContentRegionAvail();
+
+    // For demonstration, we'll render a colored rectangle
+    // In a real engine, you'd render your scene here
+
+    // Calculate the position relative to window
+    ImVec2 pos = ImGui::GetCursorScreenPos();
+
+    // Define rectangle dimensions
+    ImVec2 rect_min = pos;
+    ImVec2 rect_max = ImVec2(pos.x + viewport_size.x, pos.y + viewport_size.y);
+
+    // Render a colored rectangle
+    ImGui::GetWindowDrawList()->AddRectFilled(rect_min, rect_max, IM_COL32(100, 100, 200, 255));
+
+    ImGui::End();
+}
+
+// 3. Console Panel
+void ShowConsole(bool* p_open)
+{
+    ImGui::Begin("Console", p_open, ImGuiWindowFlags_NoCollapse);
+
+    // Options menu
+    if (ImGui::BeginPopupContextWindow())
+    {
+        if (ImGui::MenuItem("Clear")) {
+            Logger::GetInstance().Clear();
+        }
+        ImGui::EndPopup();
+    }
+
+    // Reserve enough left-over height for 1 separator and 1 input text
+    ImGui::Separator();
+
+    // Begin child region for scrolling
+    ImGui::BeginChild("ConsoleChild", ImVec2(0, 0), false, ImGuiWindowFlags_HorizontalScrollbar);
+
+    // Iterate through log entries
+    for (const auto& entry : Logger::GetInstance().GetEntries())
+    {
+        ImVec4 color = GetColorForLogLevel(entry.level);
+        ImGui::PushStyleColor(ImGuiCol_Text, color);
+        ImGui::TextUnformatted(entry.message.c_str());
+        ImGui::PopStyleColor();
+    }
+
+    // Auto-scroll to the bottom
+    ImGui::SetScrollHereY(1.0f);
+
+    ImGui::EndChild();
+
+    ImGui::End();
+}
+
+// 4. Entity Tree
+void ShowEntityTree(EntityManager& em, ComponentManager& cm, Entity& selectedEntity)
+{
+    ImGui::Begin("Entities");
+
+    // Button to create a new entity
+    if (ImGui::Button("Add Entity")) {
+        try {
+            Entity newEntity = em.CreateEntity();
+            Logger::GetInstance().Log(LogLevel::INFO, "Created Entity " + std::to_string(newEntity));
+        }
+        catch (const std::exception& e) {
+            Logger::GetInstance().Log(LogLevel::ERROR, e.what());
+        }
+    }
+
+    ImGui::Separator();
+
+    // Iterate through active entities
+    const auto& entities = em.GetActiveEntities();
+    for (auto entity : entities) {
+        char label[32];
+        sprintf(label, "Entity %d", entity);
+        if (ImGui::Selectable(label, selectedEntity == entity)) {
+            selectedEntity = entity;
+        }
+    }
+
+    // Option to destroy the selected entity
+    if (selectedEntity != UINT32_MAX) {
+        ImGui::Separator();
+        if (ImGui::Button("Delete Entity")) {
+            em.DestroyEntity(selectedEntity, cm);
+            Logger::GetInstance().Log(LogLevel::INFO, "Destroyed Entity " + std::to_string(selectedEntity));
+            selectedEntity = UINT32_MAX;
+        }
+    }
+
+    ImGui::End();
+}
+
+// 5. Inspector Panel
+void ShowInspector(EntityManager& em, ComponentManager& cm, Entity selectedEntity)
+{
+    ImGui::Begin("Inspector");
+
+    if (selectedEntity == UINT32_MAX) {
+        ImGui::Text("No entity selected.");
+        ImGui::End();
+        return;
+    }
+
+    char label[32];
+    sprintf(label, "Entity %d", selectedEntity);
+    ImGui::Text("%s", label);
+    ImGui::Separator();
+
+    // Display Transform Component
+    if (cm.HasComponent<TransformComponent>(selectedEntity)) {
+        if (ImGui::TreeNode("Transform")) {
+            auto& transform = cm.GetComponent<TransformComponent>(selectedEntity);
+            ImGui::DragFloat3("Position", &transform.position.x, 0.1f);
+            ImGui::DragFloat3("Rotation", &transform.rotation.x, 0.1f);
+            ImGui::DragFloat3("Scale", &transform.scale.x, 0.1f);
+
+            if (ImGui::Button("Remove Transform")) {
+                cm.RemoveComponent<TransformComponent>(selectedEntity);
+                Logger::GetInstance().Log(LogLevel::INFO, "Removed TransformComponent from Entity " + std::to_string(selectedEntity));
+                ImGui::TreePop();
+                ImGui::End();
+                return;
+            }
+
+            ImGui::TreePop();
+        }
+    }
+    else {
+        if (ImGui::Button("Add Transform")) {
+            cm.AddComponent<TransformComponent>(selectedEntity, TransformComponent());
+            Logger::GetInstance().Log(LogLevel::INFO, "Added TransformComponent to Entity " + std::to_string(selectedEntity));
+        }
+    }
+
+    // Display Sprite Component
+    if (cm.HasComponent<SpriteComponent>(selectedEntity)) {
+        if (ImGui::TreeNode("Sprite")) {
+            auto& sprite = cm.GetComponent<SpriteComponent>(selectedEntity);
+            char buffer[256];
+            strncpy(buffer, sprite.texturePath.c_str(), sizeof(buffer));
+            buffer[sizeof(buffer) - 1] = '\0'; // Ensure null-termination
+            if (ImGui::InputText("Texture Path", buffer, sizeof(buffer))) {
+                sprite.texturePath = std::string(buffer);
+            }
+
+            if (ImGui::Button("Remove Sprite")) {
+                cm.RemoveComponent<SpriteComponent>(selectedEntity);
+                Logger::GetInstance().Log(LogLevel::INFO, "Removed SpriteComponent from Entity " + std::to_string(selectedEntity));
+                ImGui::TreePop();
+                ImGui::End();
+                return;
+            }
+
+            ImGui::TreePop();
+        }
+    }
+    else {
+        if (ImGui::Button("Add Sprite")) {
+            cm.AddComponent<SpriteComponent>(selectedEntity, SpriteComponent("path/to/texture.png"));
+            Logger::GetInstance().Log(LogLevel::INFO, "Added SpriteComponent to Entity " + std::to_string(selectedEntity));
+        }
+    }
+
+    ImGui::End();
+}
+
+// =====================
+// Main Function
+// =====================
+
 int main(int, char**)
 {
     LOGPOINT("Loading Engine");
     Logger::GetInstance().Log(LogLevel::INFO, "Loading engine...");
-    
+
     // Setup GLFW error callback
     glfwSetErrorCallback(glfw_error_callback);
 
@@ -105,8 +344,6 @@ int main(int, char**)
         return 1;
     glfwMakeContextCurrent(window);
     glfwSwapInterval(1); // Enable vsync
-
-
 
     // Setup Dear ImGui context
     IMGUI_CHECKVERSION();
@@ -166,14 +403,22 @@ int main(int, char**)
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init(glsl_version);
 
-    // Example log messages
-    //Logger::GetInstance().Log(LogLevel::INFO, "Engine initialized successfully.");
-    //Logger::GetInstance().Log(LogLevel::WARNING, "This is a warning message.");
-    //Logger::GetInstance().Log(LogLevel::ERROR, "This is an error message.");
-    Logger::GetInstance().Log(LogLevel::INFO, "Done!");
+    // Initialize ECS
+    entityManager.Init();
+    componentManager.RegisterComponent<TransformComponent>();
+    componentManager.RegisterComponent<SpriteComponent>();
+
+    // Create a default entity with TransformComponent
+    Entity defaultEntity = entityManager.CreateEntity();
+    componentManager.AddComponent<TransformComponent>(defaultEntity, TransformComponent());
+
+    Logger::GetInstance().Log(LogLevel::INFO, "Engine initialized successfully.");
 
     // Variables for Console
     bool show_console = true;
+
+    // Variable to track the selected entity
+    Entity selectedEntity = defaultEntity;
 
     // Main loop
     while (!glfwWindowShouldClose(window))
@@ -213,6 +458,10 @@ int main(int, char**)
         ShowViewport();
         ShowConsole(&show_console);
 
+        // Show ECS UI panels
+        ShowEntityTree(entityManager, componentManager, selectedEntity);
+        ShowInspector(entityManager, componentManager, selectedEntity);
+
         // Rendering
         ImGui::Render();
         int display_w, display_h;
@@ -245,100 +494,4 @@ int main(int, char**)
     glfwTerminate();
 
     return 0;
-}
-
-// Function Definitions
-
-// 1. Main Menu Bar
-void ShowMainMenuBar()
-{
-    if (ImGui::BeginMainMenuBar())
-    {
-        if (ImGui::BeginMenu("File"))
-        {
-            if (ImGui::MenuItem("New", "Ctrl+N")) { /* Handle New */ }
-            if (ImGui::MenuItem("Open", "Ctrl+O")) { /* Handle Open */ }
-            if (ImGui::MenuItem("Save", "Ctrl+S")) { /* Handle Save */ }
-            ImGui::Separator();
-            if (ImGui::MenuItem("Exit")) { /* Handle Exit */ }
-            ImGui::EndMenu();
-        }
-        if (ImGui::BeginMenu("Edit"))
-        {
-            if (ImGui::MenuItem("Undo", "Ctrl+Z")) { /* Handle Undo */ }
-            if (ImGui::MenuItem("Redo", "Ctrl+Y")) { /* Handle Redo */ }
-            ImGui::Separator();
-            if (ImGui::MenuItem("Copy", "Ctrl+C")) { /* Handle Copy */ }
-            if (ImGui::MenuItem("Paste", "Ctrl+V")) { /* Handle Paste */ }
-            ImGui::EndMenu();
-        }
-        if (ImGui::BeginMenu("View"))
-        {
-            if (ImGui::MenuItem("Show Console", NULL, true)) { /* Toggle Console */ }
-            if (ImGui::MenuItem("Toggle Viewport")) { /* Toggle Viewport */ }
-            ImGui::EndMenu();
-        }
-        ImGui::EndMainMenuBar();
-    }
-}
-
-// 2. Viewport Panel
-void ShowViewport()
-{
-    ImGui::Begin("Viewport", NULL, ImGuiWindowFlags_NoCollapse);
-
-    // Get the size of the viewport
-    ImVec2 viewport_size = ImGui::GetContentRegionAvail();
-
-    // For demonstration, we'll render a colored rectangle
-    // In a real engine, you'd render your scene here
-
-    // Calculate the center position
-    ImVec2 pos = ImGui::GetCursorScreenPos();
-
-    // Define rectangle dimensions
-    ImVec2 rect_min = pos;
-    ImVec2 rect_max = ImVec2(pos.x + viewport_size.x, pos.y + viewport_size.y);
-
-    // Render a colored rectangle
-    ImGui::GetWindowDrawList()->AddRectFilled(rect_min, rect_max, IM_COL32(100, 100, 200, 255));
-
-    ImGui::End();
-}
-
-// 3. Console Panel
-void ShowConsole(bool* p_open)
-{
-    ImGui::Begin("Console", p_open, ImGuiWindowFlags_NoCollapse);
-
-    // Options menu
-    if (ImGui::BeginPopupContextWindow())
-    {
-        if (ImGui::MenuItem("Clear")) {
-            Logger::GetInstance().Clear();
-        }
-        ImGui::EndPopup();
-    }
-
-    // Reserve enough left-over height for 1 separator and 1 input text
-    ImGui::Separator();
-
-    // Begin child region for scrolling
-    ImGui::BeginChild("ConsoleChild", ImVec2(0, 0), false, ImGuiWindowFlags_HorizontalScrollbar);
-
-    // Iterate through log entries
-    for (const auto& entry : Logger::GetInstance().GetEntries())
-    {
-        ImVec4 color = GetColorForLogLevel(entry.level);
-        ImGui::PushStyleColor(ImGuiCol_Text, color);
-        ImGui::TextUnformatted(entry.message.c_str());
-        ImGui::PopStyleColor();
-    }
-
-    // Auto-scroll to the bottom
-    ImGui::SetScrollHereY(1.0f);
-
-    ImGui::EndChild();
-
-    ImGui::End();
 }
