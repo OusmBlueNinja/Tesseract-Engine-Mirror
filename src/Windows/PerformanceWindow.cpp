@@ -2,6 +2,8 @@
 #include "imgui.h"
 #include <algorithm> // for std::move, etc.
 
+extern int LoaddedAssets;
+
 // Initialize static members
 int PerformanceWindow::m_OpenGLCallCount = 0;
 int PerformanceWindow::m_TriangleCount   = 0;
@@ -77,6 +79,9 @@ void PerformanceWindow::Show(float fps, float ms)
                          0, nullptr, 0.0f, 5000.0f, ImVec2(0, 50));
 
     ImGui::Separator();
+
+    ImGui::TextColored(ImVec4(0.4f, 1.0f, 0.4f, 1.0f), "Assets: %d", LoaddedAssets);
+
     ImGui::End();
     ImGui::PopStyleVar();
 }

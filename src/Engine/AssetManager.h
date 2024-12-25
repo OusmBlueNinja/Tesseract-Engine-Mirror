@@ -3,52 +3,45 @@
 #include <string>
 #include <unordered_map>
 
+// Forward-declare your Shader class
+class Shader;
 
-
-// --------------------------------------------------------------------------
-// 1. Define an enum for various asset types
-// --------------------------------------------------------------------------
+// Define types of assets
 enum class AssetType
 {
     TEXTURE,
     SHADER,
     SOUND,
-    // Add more as needed
+    // Add more as you need
 };
 
-// --------------------------------------------------------------------------
-// 2. A placeholder "GenericAsset" struct
-//
-//    In a real system, you might have a base class (e.g., class Asset)
-//    with derived classes, or store typed data in union/variant.
-// --------------------------------------------------------------------------
+// A simple struct to hold the generic pointer
 struct GenericAsset
 {
-    void* data = nullptr;  // Points to the actual loaded asset data
-    // In a real engine, you'd store more metadata here.
+    void* data = nullptr;
 };
 
-// --------------------------------------------------------------------------
-// 3. The AssetManager class
-// --------------------------------------------------------------------------
+// The main AssetManager
 class AssetManager
 {
 public:
-    // Constructor / Destructor
     AssetManager()  = default;
     ~AssetManager() = default;
 
-    // loadAsset() returns a pointer to the loaded asset data.
-    // In a real engine, you might return a typed pointer or a handle.
+    // Load an asset from disk (texture, shader, etc.)
+    // Returns a void* pointer to the loaded resource.
+    //   - For TEXTURE, cast to (GLuint) 
+    //   - For SHADER, cast to (Shader*) 
+    //   - For SOUND, cast to whatever you store
     void* loadAsset(AssetType type, const std::string& path);
 
 private:
-    // Map from "type+path" -> GenericAsset
+    // Cache of already loaded assets: key = "type + path"
     std::unordered_map<std::string, GenericAsset> m_AssetMap;
 
-    // Generate a unique key for each asset based on type + path
+    // Generate the unique key
     std::string generateKey(AssetType type, const std::string& path);
 
-    // Actually load asset data from disk, specialized by AssetType
+    // Actual loading from disk
     void* loadAssetFromDisk(AssetType type, const std::string& path);
 };

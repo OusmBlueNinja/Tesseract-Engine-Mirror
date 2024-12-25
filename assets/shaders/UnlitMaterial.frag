@@ -14,5 +14,5 @@ void main()
     // Multiply the texture by our uniform color.
     // If you want a pure color (no texture), just do:
     // FragColor = uColor;
-    FragColor = texColor * uColor;
+    FragColor = texColor * texColor;
 }

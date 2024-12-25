@@ -7,6 +7,8 @@
 #include "Windows/PerformanceWindow.h"
 #include "Windows/LoggerWindow.h"
 #include "Engine/AssetManager.h"
+#include "Windows/InspectorWindow.h"
+
 
 //#define DEBUG
 #include "gcml.h"
@@ -40,6 +42,8 @@ private:
     std::unique_ptr<RenderWindow>       m_RenderWindow;
     std::unique_ptr<PerformanceWindow>  m_PerformanceWindow;
     std::unique_ptr<LoggerWindow>       m_LoggerWindow;
+    std::unique_ptr<InspectorWindow>    m_InspectorWindow;
+
 
     // For FPS calculation
     float m_Fps = 0.0f;

@@ -20,12 +20,16 @@
 #include "Windows/RenderWindow.h"
 #include "Windows/PerformanceWindow.h"
 #include "Windows/LoggerWindow.h"
+#include "Windows/InspectorWindow.h"
+
 
 
 
 
 
 AssetManager g_AssetManager;
+
+LoggerWindow *g_LoggerWindow;
 
 bool MyEngine::Init(int width, int height, const std::string& title)
 {
@@ -87,10 +91,15 @@ bool MyEngine::Init(int width, int height, const std::string& title)
     m_RenderWindow      = std::make_unique<RenderWindow>();
     m_PerformanceWindow = std::make_unique<PerformanceWindow>();
     m_LoggerWindow      = std::make_unique<LoggerWindow>();
+    m_InspectorWindow   = std::make_unique<InspectorWindow>();
+
+    
 
     // Some initial logs
     m_LoggerWindow->AddLog("Engine initialized.");
     m_LoggerWindow->AddLog("Welcome to Tesseract Engine!");
+
+    g_LoggerWindow = m_LoggerWindow.get();
 
     m_Running = true;
     m_LastTime = glfwGetTime();
@@ -125,6 +134,11 @@ void MyEngine::Run()
 
         // Show main DockSpace
         ShowDockSpace();
+
+        static Transform myTransform;
+        static Script myScript;
+        
+         m_InspectorWindow->Show(myTransform, myScript);
 
         // Show our windows
         m_RenderWindow->Show();                    // The spinning triangle as ImGui::Image
