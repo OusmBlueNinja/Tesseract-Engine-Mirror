@@ -11,6 +11,14 @@
 #include <stdio.h>
 #include <vector>
 #include <string>
+#include <unordered_map>
+#include <typeindex>
+#include <typeinfo>
+#include <memory>
+#include <algorithm>
+
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h" // Include stb_image.h
 
 #include "ECS.h" // Include the ECS header
 
@@ -57,6 +65,74 @@ private:
 #else
 #define LOGPOINT(msg)
 #endif
+
+// =====================
+// TextureManager Implementation
+// =====================
+
+class TextureManager {
+public:
+    GLuint LoadTexture(const std::string& path) {
+        // Check if texture already loaded
+        auto it = textures.find(path);
+        if (it != textures.end()) {
+            return it->second;
+        }
+
+        // Load image
+        int width, height, channels;
+        unsigned char* data = stbi_load(path.c_str(), &width, &height, &channels, 4);
+        if (!data) {
+            Logger::GetInstance().Log(LogLevel::ERROR, "Failed to load texture: " + path);
+            return 0;
+        }
+
+        // Generate OpenGL texture
+        GLuint textureID;
+        glGenTextures(1, &textureID);
+        glBindTexture(GL_TEXTURE_2D, textureID);
+        // Set texture parameters
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        // Upload texture data
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+        //glGenerateMipmap(GL_TEXTURE_2D);
+
+        glBindTexture(GL_TEXTURE_2D, 0);
+
+        // Free image data
+        stbi_image_free(data);
+
+        // Store texture
+        textures[path] = textureID;
+
+        Logger::GetInstance().Log(LogLevel::INFO, "Loaded texture: " + path);
+        return textureID;
+    }
+
+    GLuint GetTexture(const std::string& path) {
+        auto it = textures.find(path);
+        if (it != textures.end()) {
+            return it->second;
+        }
+        return LoadTexture(path);
+    }
+
+    void Cleanup() {
+        for (auto& pair : textures) {
+            glDeleteTextures(1, &pair.second);
+        }
+        textures.clear();
+    }
+
+private:
+    std::unordered_map<std::string, GLuint> textures;
+};
+
+// Instantiate TextureManager
+TextureManager textureManager;
 
 // =====================
 // ECS Instances
@@ -149,18 +225,40 @@ void ShowViewport()
     // Get the size of the viewport
     ImVec2 viewport_size = ImGui::GetContentRegionAvail();
 
-    // For demonstration, we'll render a colored rectangle
-    // In a real engine, you'd render your scene here
-
-    // Calculate the position relative to window
+    // Set viewport background to black
+    ImDrawList* draw_list = ImGui::GetWindowDrawList();
     ImVec2 pos = ImGui::GetCursorScreenPos();
-
-    // Define rectangle dimensions
     ImVec2 rect_min = pos;
     ImVec2 rect_max = ImVec2(pos.x + viewport_size.x, pos.y + viewport_size.y);
+    draw_list->AddRectFilled(rect_min, rect_max, IM_COL32(0, 0, 0, 255)); // Black background
 
-    // Render a colored rectangle
-    ImGui::GetWindowDrawList()->AddRectFilled(rect_min, rect_max, IM_COL32(100, 100, 200, 255));
+    // Iterate through active entities
+    const auto& entities = entityManager.GetActiveEntities();
+    for (auto entity : entities) {
+        if (componentManager.HasComponent<SpriteComponent>(entity) && componentManager.HasComponent<TransformComponent>(entity)) {
+            auto& sprite = componentManager.GetComponent<SpriteComponent>(entity);
+            auto& transform = componentManager.GetComponent<TransformComponent>(entity);
+
+            // Get texture ID
+            GLuint textureID = textureManager.GetTexture(sprite.texturePath);
+            if (textureID == 0) {
+                continue; // Failed to load texture
+            }
+
+            // Convert GLuint to ImTextureID
+            ImTextureID imgui_tex_id = (ImTextureID)(intptr_t)textureID;
+
+            // Define size based on scale
+            ImVec2 size(transform.scale.x, transform.scale.y);
+
+            // Define position based on position
+            ImVec2 img_pos = ImVec2(pos.x + transform.position.x, pos.y + transform.position.y);
+            ImVec2 img_size = ImVec2(img_pos.x + size.x, img_pos.y + size.y);
+
+            // Render the image
+            draw_list->AddImage(imgui_tex_id, img_pos, img_size);
+        }
+    }
 
     ImGui::End();
 }
@@ -289,11 +387,15 @@ void ShowInspector(EntityManager& em, ComponentManager& cm, Entity selectedEntit
     if (cm.HasComponent<SpriteComponent>(selectedEntity)) {
         if (ImGui::TreeNode("Sprite")) {
             auto& sprite = cm.GetComponent<SpriteComponent>(selectedEntity);
-            char buffer[256];
+            static char buffer[256];
             strncpy(buffer, sprite.texturePath.c_str(), sizeof(buffer));
             buffer[sizeof(buffer) - 1] = '\0'; // Ensure null-termination
             if (ImGui::InputText("Texture Path", buffer, sizeof(buffer))) {
-                sprite.texturePath = std::string(buffer);
+                std::string newPath(buffer);
+                if (newPath != sprite.texturePath) {
+                    sprite.texturePath = newPath;
+                    Logger::GetInstance().Log(LogLevel::INFO, "Updated SpriteComponent texture path to " + newPath + " for Entity " + std::to_string(selectedEntity));
+                }
             }
 
             if (ImGui::Button("Remove Sprite")) {
@@ -309,8 +411,11 @@ void ShowInspector(EntityManager& em, ComponentManager& cm, Entity selectedEntit
     }
     else {
         if (ImGui::Button("Add Sprite")) {
-            cm.AddComponent<SpriteComponent>(selectedEntity, SpriteComponent("path/to/texture.png"));
-            Logger::GetInstance().Log(LogLevel::INFO, "Added SpriteComponent to Entity " + std::to_string(selectedEntity));
+            // Prompt the user to input texture path
+            // For simplicity, assign a default path
+            std::string defaultPath = "assets/textures/default.png"; // Ensure this texture exists
+            cm.AddComponent<SpriteComponent>(selectedEntity, SpriteComponent(defaultPath));
+            Logger::GetInstance().Log(LogLevel::INFO, "Added SpriteComponent to Entity " + std::to_string(selectedEntity) + " with texture path: " + defaultPath);
         }
     }
 
@@ -344,6 +449,7 @@ int main(int, char**)
         return 1;
     glfwMakeContextCurrent(window);
     glfwSwapInterval(1); // Enable vsync
+
 
     // Setup Dear ImGui context
     IMGUI_CHECKVERSION();
@@ -408,7 +514,7 @@ int main(int, char**)
     componentManager.RegisterComponent<TransformComponent>();
     componentManager.RegisterComponent<SpriteComponent>();
 
-    // Create a default entity with TransformComponent
+    // Create a default entity with TransformComponent (without SpriteComponent)
     Entity defaultEntity = entityManager.CreateEntity();
     componentManager.AddComponent<TransformComponent>(defaultEntity, TransformComponent());
 
@@ -436,8 +542,10 @@ int main(int, char**)
                                             ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
                                             ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
         const ImGuiViewport* viewport = ImGui::GetMainViewport();
-        ImGui::SetNextWindowPos(viewport->Pos);
-        ImGui::SetNextWindowSize(viewport->Size);
+
+        // Adjust the docking space position by 20 pixels to avoid overlapping with the main menu bar
+        ImGui::SetNextWindowPos(ImVec2(viewport->Pos.x, viewport->Pos.y + 20));
+        ImGui::SetNextWindowSize(ImVec2(viewport->Size.x, viewport->Size.y - 20));
         ImGui::SetNextWindowViewport(viewport->ID);
         ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
         ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
@@ -486,6 +594,7 @@ int main(int, char**)
     }
 
     // Cleanup
+    textureManager.Cleanup();
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();

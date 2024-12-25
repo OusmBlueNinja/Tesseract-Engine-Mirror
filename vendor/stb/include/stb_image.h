@@ -1,5 +1,4 @@
-#ifndef STB_IMAG_H
-#define STB_IMAG_H
+#pragma once
 
 /* stb_image - v2.30 - public domain image loader - http://nothings.org/stb
                                   no warranty implied; use at your own risk
@@ -7990,4 +7989,3 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 ------------------------------------------------------------------------------
 */
 
-#endif
