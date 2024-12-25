@@ -14,6 +14,8 @@ public:
     void UpdatePerformanceStats(int newCallCount, int newTriangleCount);
 
 private:
+
+    float max_ms;
     // These are static so they're shared across all instances
     static int m_OpenGLCallCount;
     static int m_TriangleCount;
