@@ -7,9 +7,19 @@
 #include "imgui_impl_opengl3.h"
 #include "../IconsFontAwesome6.h" // Include the Font Awesome icons header
 
+
+#include <iostream>
 #include <stdio.h>
 #include <vector>
 #include <string>
+
+#define DEBUG 1
+
+#ifdef DEBUG
+#define LOGPOINT(msg) std::cout << "[TESRCT] [" << __func__ << ":" << __LINE__ << "] " << (msg) << std::endl;
+#else
+#define LOGPOINT(msg)
+#endif
 
 // Logger Implementation
 enum class LogLevel { INFO, WARNING, ERROR };
@@ -74,6 +84,7 @@ ImVec4 GetColorForLogLevel(LogLevel level)
 
 int main(int, char**)
 {
+    LOGPOINT("Loading Engine");
     Logger::GetInstance().Log(LogLevel::INFO, "Loading engine...");
     
     // Setup GLFW error callback
