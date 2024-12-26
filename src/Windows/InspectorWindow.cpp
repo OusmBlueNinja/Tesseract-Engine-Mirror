@@ -6,7 +6,11 @@
 
 #include <vector>
 
-extern std::vector<GameObject> m_GameObjects;
+extern std::vector<GameObject> g_GameObjects;
+extern GameObject* g_SelectedObject;          // Pointer to the currently selected object
+
+
+
 
 void InspectorWindow::Show()
 {
@@ -30,10 +34,10 @@ void InspectorWindow::Show()
         bool transformOpen = ImGui::CollapsingHeader("Transform##Main", ImGuiTreeNodeFlags_DefaultOpen);
         ImGui::PopStyleColor();
 
-        if (transformOpen)
+        if (transformOpen && g_SelectedObject) //! Funny: I did not put a null check here and it broke everything.
         {
 
-            Transform* transform = &m_GameObjects[0].transform;
+            Transform* transform = &g_SelectedObject->transform;
             if (ImGui::IsItemHovered())
             {
                 ImGui::BeginTooltip();
