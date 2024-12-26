@@ -8,6 +8,8 @@
 #include "Windows/LoggerWindow.h"
 #include "Engine/AssetManager.h"
 #include "Windows/InspectorWindow.h"
+#include "Windows/SceneWindow.h"
+
 
 #include "Componenets/GameObject.h"
 #include "Componenets/Mesh.h"
@@ -50,6 +52,8 @@ private:
     std::unique_ptr<PerformanceWindow>  m_PerformanceWindow;
     std::unique_ptr<LoggerWindow>       m_LoggerWindow;
     std::unique_ptr<InspectorWindow>    m_InspectorWindow;
+    std::unique_ptr<SceneWindow>        m_SceneWindow;
+
 
 
     // For FPS calculation

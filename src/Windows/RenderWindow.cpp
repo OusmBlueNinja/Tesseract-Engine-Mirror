@@ -13,7 +13,7 @@
 #include "Componenets/Mesh.h"
 #include "Componenets/Transform.h"
 
-extern std::vector<GameObject> m_GameObjects;
+extern std::vector<GameObject> g_GameObjects;
 
 
 #define CAM_FOV          45.0f
@@ -209,7 +209,7 @@ void RenderWindow::RenderSceneToFBO()
     glm::mat4 proj = glm::perspective(glm::radians(CAM_FOV), aspect, CAM_NEAR_PLAIN, CAM_FAR_PLAIN);
 
     // Iterate over each GameObject and render it
-    for (auto& obj : m_GameObjects)
+    for (auto& obj : g_GameObjects)
     {
         // -----------------------------------
         // 1) Build MVP from obj.transform
