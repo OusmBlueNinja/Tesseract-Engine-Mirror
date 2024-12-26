@@ -2,6 +2,14 @@
 #include <cstdio>   // for debugging or printing if needed
 #include <cstring>  // for strcpy, if needed
 
+float* glmVec3ToFloatArray(const glm::vec3& vec) {
+    static float outArray[3];
+    outArray[0] = vec.x;
+    outArray[1] = vec.y;
+    outArray[2] = vec.z;
+    return outArray;
+}
+
 void InspectorWindow::Show(Transform& transform, Script& script)
 {
     // Increase window/item spacing for a cleaner look
@@ -56,7 +64,7 @@ void InspectorWindow::Show(Transform& transform, Script& script)
 
                 const char* axisNames[3] = { "X", "Y", "Z" };
                 // We'll reference transform.position here
-                float* pos = transform.position;
+                float* pos = glmVec3ToFloatArray(transform.position);
 
                 ImGui::PushID("PositionRow");
                 for (int i = 0; i < 3; i++)
@@ -101,7 +109,7 @@ void InspectorWindow::Show(Transform& transform, Script& script)
             {
                 // Same approach, but referencing transform.rotation
                 const char* axisNames[3] = { "X", "Y", "Z" };
-                float* rot = transform.rotation;
+                float* rot = glmVec3ToFloatArray(transform.rotation);
 
                 // We can reuse the same color sets
                 ImGui::PushID("RotationRow");
@@ -155,7 +163,7 @@ void InspectorWindow::Show(Transform& transform, Script& script)
 
             {
                 const char* axisNames[3] = { "X", "Y", "Z" };
-                float* scl = transform.scale;
+                float* scl = glmVec3ToFloatArray(transform.scale);
 
                 ImGui::PushID("ScaleRow");
                 for (int i = 0; i < 3; i++)

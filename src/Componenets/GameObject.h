@@ -1,11 +1,15 @@
-// GameObject.h
+// src/Components/GameObject.h
 #pragma once
+
+#include <string>
 #include "Transform.h"
 #include "Mesh.h"
 
-// A game object that has a transform and a mesh
+
 struct GameObject
 {
-    Transform transform;
-    Mesh mesh;
+    std::string name;    // Unique name for the GameObject
+    Transform transform; // Position, Rotation, Scale
+    Mesh mesh;           // Rendering Mesh
+    // Add other components as needed
 };
