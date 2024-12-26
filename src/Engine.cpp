@@ -218,7 +218,7 @@ void MyEngine::Run()
     // Pseudocode:
     GameObject cube;
     cube.transform.position = glm::vec3(0.f, 0.f, 0.f);
-    cube.transform.rotation = glm::vec3(0.f, 0.f, 0.f);
+    cube.transform.rotation = glm::vec3(0.f, 0.5f, 0.f);
     cube.transform.scale    = glm::vec3(1.f, 1.f, 1.f);
 
     // Suppose we loaded a VAO, an EBO with 36 indices for the cube, 
@@ -255,10 +255,8 @@ void MyEngine::Run()
         // Show main DockSpace
         ShowDockSpace();
 
-        static Transform myTransform;
-        static Script myScript;
         
-         m_InspectorWindow->Show(myTransform, myScript);
+        m_InspectorWindow->Show();
 
         // Show our windows
         m_RenderWindow->Show();                    // The spinning triangle as ImGui::Image

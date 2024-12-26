@@ -16,6 +16,10 @@
 extern std::vector<GameObject> m_GameObjects;
 
 
+#define CAM_FOV          45.0f
+#define CAM_NEAR_PLAIN   0.1f
+#define CAM_FAR_PLAIN    1000.0f
+
 
 // Include your AssetManager & Shader headers
 #include "Engine/AssetManager.h"
@@ -202,7 +206,7 @@ void RenderWindow::RenderSceneToFBO()
     // Define view and projection matrices once
     glm::mat4 view = glm::translate(glm::mat4(1.f), glm::vec3(0.f, 0.f, -5.f));
     float aspect = (m_LastHeight != 0) ? (float)m_LastWidth / (float)m_LastHeight : 1.0f;
-    glm::mat4 proj = glm::perspective(glm::radians(45.f), aspect, 0.1f, 100.f);
+    glm::mat4 proj = glm::perspective(glm::radians(CAM_FOV), aspect, CAM_NEAR_PLAIN, CAM_FAR_PLAIN);
 
     // Iterate over each GameObject and render it
     for (auto& obj : m_GameObjects)

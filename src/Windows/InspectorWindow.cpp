@@ -1,21 +1,19 @@
 #include "InspectorWindow.h"
-#include <cstdio>   // for debugging or printing if needed
-#include <cstring>  // for strcpy, if needed
+#include <cstdio>  // for debugging or printing if needed
+#include <cstring> // for strcpy, if needed
 
-float* glmVec3ToFloatArray(const glm::vec3& vec) {
-    static float outArray[3];
-    outArray[0] = vec.x;
-    outArray[1] = vec.y;
-    outArray[2] = vec.z;
-    return outArray;
-}
+#include <glm/gtc/type_ptr.hpp> // Required for glm::value_ptr
 
-void InspectorWindow::Show(Transform& transform, Script& script)
+#include <vector>
+
+extern std::vector<GameObject> m_GameObjects;
+
+void InspectorWindow::Show()
 {
     // Increase window/item spacing for a cleaner look
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(12, 12));
-    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding,  ImVec2(6, 4));
-    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing,   ImVec2(10, 10));
+    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(6, 4));
+    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(10, 10));
 
     if (ImGui::Begin("Inspector"))
     {
@@ -28,12 +26,14 @@ void InspectorWindow::Show(Transform& transform, Script& script)
         // 1) TRANSFORM
         // ===========================
         // Color the Transform header
-        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 0.4f, 1.0f)); 
+        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 0.4f, 1.0f));
         bool transformOpen = ImGui::CollapsingHeader("Transform##Main", ImGuiTreeNodeFlags_DefaultOpen);
         ImGui::PopStyleColor();
 
         if (transformOpen)
         {
+
+            Transform* transform = &m_GameObjects[0].transform;
             if (ImGui::IsItemHovered())
             {
                 ImGui::BeginTooltip();
@@ -50,30 +50,45 @@ void InspectorWindow::Show(Transform& transform, Script& script)
             {
                 // We'll assign colors for X, Y, Z buttons
                 // (normal, hovered, active)
-                static const ImVec4 colX      = ImVec4(1.0f, 0.4f, 0.4f, 1.0f);
+                static const ImVec4 colX = ImVec4(1.0f, 0.4f, 0.4f, 1.0f);
                 static const ImVec4 colXHover = ImVec4(1.0f, 0.6f, 0.6f, 1.0f);
-                static const ImVec4 colXActive= ImVec4(1.0f, 0.2f, 0.2f, 1.0f);
+                static const ImVec4 colXActive = ImVec4(1.0f, 0.2f, 0.2f, 1.0f);
 
-                static const ImVec4 colY      = ImVec4(0.4f, 1.0f, 0.4f, 1.0f);
+                static const ImVec4 colY = ImVec4(0.4f, 1.0f, 0.4f, 1.0f);
                 static const ImVec4 colYHover = ImVec4(0.6f, 1.0f, 0.6f, 1.0f);
-                static const ImVec4 colYActive= ImVec4(0.2f, 1.0f, 0.2f, 1.0f);
+                static const ImVec4 colYActive = ImVec4(0.2f, 1.0f, 0.2f, 1.0f);
 
-                static const ImVec4 colZ      = ImVec4(0.4f, 0.4f, 1.0f, 1.0f);
+                static const ImVec4 colZ = ImVec4(0.4f, 0.4f, 1.0f, 1.0f);
                 static const ImVec4 colZHover = ImVec4(0.6f, 0.6f, 1.0f, 1.0f);
-                static const ImVec4 colZActive= ImVec4(0.2f, 0.2f, 1.0f, 1.0f);
+                static const ImVec4 colZActive = ImVec4(0.2f, 0.2f, 1.0f, 1.0f);
 
-                const char* axisNames[3] = { "X", "Y", "Z" };
+                const char *axisNames[3] = {"X", "Y", "Z"};
                 // We'll reference transform.position here
-                float* pos = glmVec3ToFloatArray(transform.position);
+                float *pos = glm::value_ptr(transform->position);
 
                 ImGui::PushID("PositionRow");
                 for (int i = 0; i < 3; i++)
                 {
                     // Determine color set
                     ImVec4 col, colH, colA;
-                    if (i == 0) { col = colX; colH = colXHover; colA = colXActive; }
-                    else if (i == 1) { col = colY; colH = colYHover; colA = colYActive; }
-                    else { col = colZ; colH = colZHover; colA = colZActive; }
+                    if (i == 0)
+                    {
+                        col = colX;
+                        colH = colXHover;
+                        colA = colXActive;
+                    }
+                    else if (i == 1)
+                    {
+                        col = colY;
+                        colH = colYHover;
+                        colA = colYActive;
+                    }
+                    else
+                    {
+                        col = colZ;
+                        colH = colZHover;
+                        colA = colZActive;
+                    }
 
                     // Push color style for button
                     ImGui::PushStyleColor(ImGuiCol_Button, col);
@@ -92,7 +107,8 @@ void InspectorWindow::Show(Transform& transform, Script& script)
                     ImGui::SetNextItemWidth(60.0f);
                     ImGui::DragFloat((std::string("##Pos") + axisNames[i]).c_str(), &pos[i], 0.1f);
 
-                    if (i < 2) ImGui::SameLine(0, 15);
+                    if (i < 2)
+                        ImGui::SameLine(0, 15);
                 }
                 ImGui::PopID();
             }
@@ -108,8 +124,8 @@ void InspectorWindow::Show(Transform& transform, Script& script)
 
             {
                 // Same approach, but referencing transform.rotation
-                const char* axisNames[3] = { "X", "Y", "Z" };
-                float* rot = glmVec3ToFloatArray(transform.rotation);
+                const char *axisNames[3] = {"X", "Y", "Z"};
+                float *rot = glm::value_ptr(transform->rotation);
 
                 // We can reuse the same color sets
                 ImGui::PushID("RotationRow");
@@ -117,20 +133,23 @@ void InspectorWindow::Show(Transform& transform, Script& script)
                 {
                     // Decide color sets for X, Y, Z
                     ImVec4 col, colH, colA;
-                    if (i == 0) {
+                    if (i == 0)
+                    {
                         col = ImVec4(1.0f, 0.4f, 0.4f, 1.0f);
-                        colH= ImVec4(1.0f, 0.6f, 0.6f, 1.0f);
-                        colA= ImVec4(1.0f, 0.2f, 0.2f, 1.0f);
+                        colH = ImVec4(1.0f, 0.6f, 0.6f, 1.0f);
+                        colA = ImVec4(1.0f, 0.2f, 0.2f, 1.0f);
                     }
-                    else if (i == 1) {
+                    else if (i == 1)
+                    {
                         col = ImVec4(0.4f, 1.0f, 0.4f, 1.0f);
-                        colH= ImVec4(0.6f, 1.0f, 0.6f, 1.0f);
-                        colA= ImVec4(0.2f, 1.0f, 0.2f, 1.0f);
+                        colH = ImVec4(0.6f, 1.0f, 0.6f, 1.0f);
+                        colA = ImVec4(0.2f, 1.0f, 0.2f, 1.0f);
                     }
-                    else {
+                    else
+                    {
                         col = ImVec4(0.4f, 0.4f, 1.0f, 1.0f);
-                        colH= ImVec4(0.6f, 0.6f, 1.0f, 1.0f);
-                        colA= ImVec4(0.2f, 0.2f, 1.0f, 1.0f);
+                        colH = ImVec4(0.6f, 0.6f, 1.0f, 1.0f);
+                        colA = ImVec4(0.2f, 0.2f, 1.0f, 1.0f);
                     }
 
                     ImGui::PushStyleColor(ImGuiCol_Button, col);
@@ -147,7 +166,8 @@ void InspectorWindow::Show(Transform& transform, Script& script)
                     ImGui::SetNextItemWidth(60.0f);
                     ImGui::DragFloat((std::string("##Rot") + axisNames[i]).c_str(), &rot[i], 0.1f);
 
-                    if (i < 2) ImGui::SameLine(0, 15);
+                    if (i < 2)
+                        ImGui::SameLine(0, 15);
                 }
                 ImGui::PopID();
             }
@@ -162,28 +182,31 @@ void InspectorWindow::Show(Transform& transform, Script& script)
             ImGui::Spacing();
 
             {
-                const char* axisNames[3] = { "X", "Y", "Z" };
-                float* scl = glmVec3ToFloatArray(transform.scale);
+                const char *axisNames[3] = {"X", "Y", "Z"};
+                float *scl = glm::value_ptr(transform->scale);
 
                 ImGui::PushID("ScaleRow");
                 for (int i = 0; i < 3; i++)
                 {
                     // same color approach
                     ImVec4 col, colH, colA;
-                    if (i == 0) {
+                    if (i == 0)
+                    {
                         col = ImVec4(1.0f, 0.4f, 0.4f, 1.0f);
-                        colH= ImVec4(1.0f, 0.6f, 0.6f, 1.0f);
-                        colA= ImVec4(1.0f, 0.2f, 0.2f, 1.0f);
+                        colH = ImVec4(1.0f, 0.6f, 0.6f, 1.0f);
+                        colA = ImVec4(1.0f, 0.2f, 0.2f, 1.0f);
                     }
-                    else if (i == 1) {
+                    else if (i == 1)
+                    {
                         col = ImVec4(0.4f, 1.0f, 0.4f, 1.0f);
-                        colH= ImVec4(0.6f, 1.0f, 0.6f, 1.0f);
-                        colA= ImVec4(0.2f, 1.0f, 0.2f, 1.0f);
+                        colH = ImVec4(0.6f, 1.0f, 0.6f, 1.0f);
+                        colA = ImVec4(0.2f, 1.0f, 0.2f, 1.0f);
                     }
-                    else {
+                    else
+                    {
                         col = ImVec4(0.4f, 0.4f, 1.0f, 1.0f);
-                        colH= ImVec4(0.6f, 0.6f, 1.0f, 1.0f);
-                        colA= ImVec4(0.2f, 0.2f, 1.0f, 1.0f);
+                        colH = ImVec4(0.6f, 0.6f, 1.0f, 1.0f);
+                        colA = ImVec4(0.2f, 0.2f, 1.0f, 1.0f);
                     }
 
                     ImGui::PushStyleColor(ImGuiCol_Button, col);
@@ -200,8 +223,8 @@ void InspectorWindow::Show(Transform& transform, Script& script)
                     ImGui::SetNextItemWidth(60.0f);
                     ImGui::DragFloat((std::string("##Scl") + axisNames[i]).c_str(), &scl[i], 0.1f);
 
-
-                    if (i < 2) ImGui::SameLine(0, 15);
+                    if (i < 2)
+                        ImGui::SameLine(0, 15);
                 }
                 ImGui::PopID();
             }
@@ -216,39 +239,40 @@ void InspectorWindow::Show(Transform& transform, Script& script)
         // 2) SCRIPT
         // ===========================
         // We keep script text in white
-        if (ImGui::CollapsingHeader("Script##Main", ImGuiTreeNodeFlags_DefaultOpen))
-        {
-            if (ImGui::IsItemHovered())
-            {
-                ImGui::BeginTooltip();
-                ImGui::TextUnformatted("Attach a script or logic component here.");
-                ImGui::EndTooltip();
-            }
+        // if (ImGui::CollapsingHeader("Script##Main", ImGuiTreeNodeFlags_DefaultOpen))
+        //{
+        //     if (ImGui::IsItemHovered())
+        //     {
+        //         ImGui::BeginTooltip();
+        //         ImGui::TextUnformatted("Attach a script or logic component here.");
+        //         ImGui::EndTooltip();
+        //     }
 
-            ImGui::TextUnformatted("Script Name:");
-            ImGui::SameLine();
+        //    ImGui::TextUnformatted("Script Name:");
+        //    ImGui::SameLine();
 
-            {
-                char buffer[128];
-                std::snprintf(buffer, sizeof(buffer), "%s", script.scriptName.c_str());
-                ImGui::SetNextItemWidth(-1);
-                if (ImGui::InputText("##ScriptName", buffer, sizeof(buffer)))
-                {
-                    script.scriptName = buffer;
-                }
-            }
+        //    {
+        //        char buffer[128];
+        //        std::snprintf(buffer, sizeof(buffer), "%s", script.scriptName.c_str());
+        //        ImGui::SetNextItemWidth(-1);
+        //        if (ImGui::InputText("##ScriptName", buffer, sizeof(buffer)))
+        //        {
+        //            script.scriptName = buffer;
+        //        }
+        //    }
 
-            ImGui::Spacing();
+        //    ImGui::Spacing();
 
-            ImGui::TextUnformatted("Script Enabled:");
-            ImGui::SameLine();
-            ImGui::Checkbox("##ScriptEnabled", &script.enabled);
+        //    ImGui::TextUnformatted("Script Enabled:");
+        //    ImGui::SameLine();
+        //    ImGui::Checkbox("##ScriptEnabled", &script.enabled);
 
-            ImGui::Spacing();
-            ImGui::Separator();
-        }
-    }
+        //    ImGui::Spacing();
+        //    ImGui::Separator();
+        //}
     ImGui::End();
+    
+    } //
 
     // Restore style
     ImGui::PopStyleVar(3);

@@ -26,9 +26,10 @@ public:
 
     // Show the window (call each frame)
     // Pass references to your components, so any changes get applied to them.
-    void Show(Transform& transform, Script& script);
+    void Show();
 
 private:
+
     // You can store additional state or styling here if needed
     // e.g. bool m_SomeInternalFlag = false;
 };
