@@ -1,25 +1,29 @@
 #include "PerformanceWindow.h"
 #include "imgui.h"
 #include <algorithm> // for std::max_element, etc.
+#include "Engine/ThemeManager.h"
+
+
+
 
 extern int LoaddedAssets;
 
 // Initialize static members
 int PerformanceWindow::m_OpenGLCallCount = 0;
-int PerformanceWindow::m_TriangleCount   = 0;
+int PerformanceWindow::m_TriangleCount = 0;
 
 // We'll store up to 60 data points for each stat.
-static float s_FpsHistory[60]      = {0.0f};
-static float s_MsHistory[60]       = {0.0f};
-static float s_CallsHistory[60]    = {0.0f};
+static float s_FpsHistory[60] = {0.0f};
+static float s_MsHistory[60] = {0.0f};
+static float s_CallsHistory[60] = {0.0f};
 static float s_TriangleHistory[60] = {0.0f};
 
 // Current dynamic max scale for FPS and ms
 static float s_FpsScale = 120.0f; // default starting scale for FPS
-static float s_MsScale  = 25.0f;  // default starting scale for ms
+static float s_MsScale = 25.0f;   // default starting scale for ms
 
 // This function shifts the old values left and appends a new value at the end.
-static void PushValueToHistory(float* historyArray, int historySize, float newValue)
+static void PushValueToHistory(float *historyArray, int historySize, float newValue)
 {
     for (int i = 0; i < historySize - 1; i++)
         historyArray[i] = historyArray[i + 1];
@@ -36,13 +40,13 @@ static double s_LastScaleUpdate = 0.0;
 void PerformanceWindow::UpdatePerformanceStats(int newCallCount, int newTriangleCount)
 {
     m_OpenGLCallCount = newCallCount;
-    m_TriangleCount   = newTriangleCount;
+    m_TriangleCount = newTriangleCount;
 }
 
 void PerformanceWindow::Show(float fps, float ms)
 {
     // 1) Get current time from ImGui's internal clock
-    double currentTime = ImGui::GetTime(); 
+    double currentTime = ImGui::GetTime();
 
     // 2) If at least 0.05s has passed, push new data (about 20 updates per second)
     if ((currentTime - s_LastPushTime) >= 0.05)
@@ -50,9 +54,9 @@ void PerformanceWindow::Show(float fps, float ms)
         s_LastPushTime = currentTime;
 
         // Push new values into our history arrays
-        PushValueToHistory(s_FpsHistory,      60, fps);
-        PushValueToHistory(s_MsHistory,       60, ms);
-        PushValueToHistory(s_CallsHistory,    60, (float)m_OpenGLCallCount);
+        PushValueToHistory(s_FpsHistory, 60, fps);
+        PushValueToHistory(s_MsHistory, 60, ms);
+        PushValueToHistory(s_CallsHistory, 60, (float)m_OpenGLCallCount);
         PushValueToHistory(s_TriangleHistory, 60, (float)m_TriangleCount);
     }
 
@@ -70,7 +74,8 @@ void PerformanceWindow::Show(float fps, float ms)
         }
         // Scale it by +15%, ensure it's not below 1.0
         maxFps *= 1.15f;
-        if (maxFps < 1.0f) maxFps = 1.0f;
+        if (maxFps < 1.0f)
+            maxFps = 1.0f;
         s_FpsScale = maxFps;
 
         // Find the maximum in s_MsHistory
@@ -82,7 +87,8 @@ void PerformanceWindow::Show(float fps, float ms)
         }
         // Scale it by +15%, ensure it's not below 1.0
         maxMs *= 1.15f;
-        if (maxMs < 1.0f) maxMs = 1.0f;
+        if (maxMs < 1.0f)
+            maxMs = 1.0f;
         s_MsScale = maxMs;
     }
 
@@ -101,45 +107,45 @@ void PerformanceWindow::Show(float fps, float ms)
 
     // Graphs for FPS + MS
     // min = 0, max = s_FpsScale or s_MsScale
-    ImGui::PlotLines("FPS", 
-                     s_FpsHistory, 
+    ImGui::PlotLines("FPS",
+                     s_FpsHistory,
                      IM_ARRAYSIZE(s_FpsHistory),
-                     0, 
-                     nullptr, 
-                     0.0f, 
-                     s_FpsScale, 
+                     0,
+                     nullptr,
+                     0.0f,
+                     s_FpsScale,
                      ImVec2(0, 60));
-    
-    ImGui::PlotHistogram("ms/frame", 
-                         s_MsHistory, 
+
+    ImGui::PlotHistogram("ms/frame",
+                         s_MsHistory,
                          IM_ARRAYSIZE(s_MsHistory),
-                         0, 
-                         nullptr, 
-                         0.0f, 
-                         s_MsScale, 
+                         0,
+                         nullptr,
+                         0.0f,
+                         s_MsScale,
                          ImVec2(0, 60));
 
     ImGui::Separator();
 
     // Show OpenGL calls + Triangles
     ImGui::Text("OpenGL Calls: %d", m_OpenGLCallCount);
-    ImGui::PlotLines("GL Calls", 
-                     s_CallsHistory, 
+    ImGui::PlotLines("GL Calls",
+                     s_CallsHistory,
                      IM_ARRAYSIZE(s_CallsHistory),
-                     0, 
-                     nullptr, 
-                     0.0f, 
-                     300.0f, 
+                     0,
+                     nullptr,
+                     0.0f,
+                     300.0f,
                      ImVec2(0, 50));
 
     ImGui::Text("Triangles: %d", m_TriangleCount);
-    ImGui::PlotHistogram("Triangles", 
-                         s_TriangleHistory, 
+    ImGui::PlotHistogram("Triangles",
+                         s_TriangleHistory,
                          IM_ARRAYSIZE(s_TriangleHistory),
-                         0, 
-                         nullptr, 
-                         0.0f, 
-                         5000.0f, 
+                         0,
+                         nullptr,
+                         0.0f,
+                         5000.0f,
                          ImVec2(0, 50));
 
     ImGui::Separator();
@@ -147,6 +153,32 @@ void PerformanceWindow::Show(float fps, float ms)
     // Show asset count
     ImGui::TextColored(ImVec4(0.4f, 1.0f, 0.4f, 1.0f), "Assets: %d", LoaddedAssets);
 
+    ImGui::Separator();
+
+
+
+    const char *options[] = {"Bootsrap", "Duck Red", "Windark"};
+    static int current_option = -1; // No selection initially
+
+    const char *preview_value = (current_option >= 0 && current_option < 3) ? options[current_option] : "Select an option";
+    if (ImGui::BeginCombo("Theme", preview_value))
+    {
+        for (int n = 0; n < IM_ARRAYSIZE(options); n++)
+        {
+            bool is_selected = (current_option == n);
+            if (ImGui::Selectable(options[n], is_selected))
+            {
+                current_option = n;       // Update current option
+                ThemeManager_ChangeTheme(n); // Call the function with the selected option
+            }
+            // Set the initial focus when opening the combo (optional)
+            if (is_selected)
+                ImGui::SetItemDefaultFocus();
+        }
+        ImGui::EndCombo();
+    }
+
     ImGui::End();
+
     ImGui::PopStyleVar();
 }

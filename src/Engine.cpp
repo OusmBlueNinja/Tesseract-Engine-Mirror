@@ -24,6 +24,9 @@
 #include "Windows/SceneWindow.h"
 
 
+#include "Engine/ThemeManager.h"
+
+
 #define YAML_CPP_STATIC_DEFINE
 #include <yaml-cpp/yaml.h>
 
@@ -101,6 +104,7 @@ bool MyEngine::Init(int width, int height, const std::string& title)
     // Style
     ImGui::StyleColorsDark();
 
+
     // Platform/Renderer bindings
     ImGui_ImplGlfw_InitForOpenGL(m_Window, true);
     ImGui_ImplOpenGL3_Init("#version 330");
@@ -135,7 +139,7 @@ void MyEngine::Run()
     // Pseudocode:
     GameObject cube;
 
-    cube.name = std::string("Cube");
+    cube.name = std::string("Default");
     cube.transform.position = glm::vec3(0.f, 0.f, 0.f);
     cube.transform.rotation = glm::vec3(0.f, 0.5f, 0.f);
     cube.transform.scale    = glm::vec3(1.f, 1.f, 1.f);
@@ -151,6 +155,9 @@ void MyEngine::Run()
     //printf("%p\n", &g_GameObjects);
 
     // Possibly create more GameObjects with different positions or textures
+
+
+    ThemeManager_ChangeTheme(2);
 
     
     while (!glfwWindowShouldClose(m_Window) && m_Running)
