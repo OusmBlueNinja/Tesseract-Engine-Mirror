@@ -1,10 +1,21 @@
 // RenderWindow.cpp
 
 #include "RenderWindow.h"
+#include <vector> // Add this line
+
 #include <GL/glew.h>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include "imgui.h"
+
+
+#include "Componenets/GameObject.h"
+#include "Componenets/Mesh.h"
+#include "Componenets/Transform.h"
+
+extern std::vector<GameObject> m_GameObjects;
+
+
 
 // Include your AssetManager & Shader headers
 #include "Engine/AssetManager.h"
@@ -160,12 +171,19 @@ void RenderWindow::InitGLResources()
             m_TextureID = static_cast<GLuint>(reinterpret_cast<uintptr_t>(texAsset));
         }
     }
+
+    // ----------------------------------------------------
+    // 4) Initialize GameObjects
+    // ----------------------------------------------------
+    
 }
+
 
 void RenderWindow::RenderSceneToFBO()
 {
-    m_RotationAngle += 0.5f; // spin per frame
+    m_RotationAngle += 0.1f; // spin per frame
 
+    // Bind the FBO
     m_FBO.Bind();
     glViewport(0, 0, m_LastWidth, m_LastHeight);
 
@@ -175,40 +193,65 @@ void RenderWindow::RenderSceneToFBO()
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     // Use our loaded shader
-    if (m_ShaderPtr)
-        m_ShaderPtr->Use();
-    else
-        return; // No shader? Can't render
+    if (!m_ShaderPtr)
+        return; // Can't render without a shader
 
-    // Build MVP
-    glm::mat4 model = glm::rotate(glm::mat4(1.0f),
-                                  glm::radians(m_RotationAngle),
-                                  glm::vec3(1.f, 1.f, 0.f));
-
-    glm::mat4 view = glm::translate(glm::mat4(1.0f), glm::vec3(0.f, 0.f, -5.f));
-    float aspect    = (m_LastHeight != 0) ? (float)m_LastWidth / (float)m_LastHeight : 1.0f;
-    glm::mat4 proj  = glm::perspective(glm::radians(45.f), aspect, 0.1f, 100.f);
-    glm::mat4 mvp   = proj * view * model;
-
-    // Pass MVP to the shader
+    m_ShaderPtr->Use();
     GLuint programID = m_ShaderPtr->GetProgramID();
-    GLint mvpLoc = glGetUniformLocation(programID, "uMVP");
-    glUniformMatrix4fv(mvpLoc, 1, GL_FALSE, glm::value_ptr(mvp));
 
-    // Bind the texture to unit 0
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, m_TextureID);
+    // Define view and projection matrices once
+    glm::mat4 view = glm::translate(glm::mat4(1.f), glm::vec3(0.f, 0.f, -5.f));
+    float aspect = (m_LastHeight != 0) ? (float)m_LastWidth / (float)m_LastHeight : 1.0f;
+    glm::mat4 proj = glm::perspective(glm::radians(45.f), aspect, 0.1f, 100.f);
 
-    // If your shader has a uniform sampler2D named "uTexture"
-    GLint texLoc = glGetUniformLocation(programID, "uTexture");
-    glUniform1i(texLoc, 0);
+    // Iterate over each GameObject and render it
+    for (auto& obj : m_GameObjects)
+    {
+        // -----------------------------------
+        // 1) Build MVP from obj.transform
+        // -----------------------------------
+        glm::mat4 model = glm::mat4(1.f);
 
-    // Draw the cube
-    glBindVertexArray(m_VAO);
-    glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, nullptr);
+        // Translate
+        model = glm::translate(model, obj.transform.position);
+
+        // Rotate around X, Y, Z
+        model = glm::rotate(model, glm::radians(obj.transform.rotation.x), glm::vec3(1.f, 0.f, 0.f));
+        model = glm::rotate(model, glm::radians(obj.transform.rotation.y), glm::vec3(0.f, 1.f, 0.f));
+        model = glm::rotate(model, glm::radians(obj.transform.rotation.z), glm::vec3(0.f, 0.f, 1.f));
+
+        // Scale
+        model = glm::scale(model, obj.transform.scale);
+
+        // Compute MVP
+        glm::mat4 mvp = proj * view * model;
+
+        // Pass MVP to the shader
+        GLint mvpLoc = glGetUniformLocation(programID, "uMVP");
+        glUniformMatrix4fv(mvpLoc, 1, GL_FALSE, glm::value_ptr(mvp));
+
+        // -----------------------------------
+        // 2) Bind the object's texture
+        // -----------------------------------
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, obj.mesh.textureID);
+
+        // Set the sampler uniform to texture unit 0
+        GLint texLoc = glGetUniformLocation(programID, "uTexture");
+        glUniform1i(texLoc, 0);
+
+        // -----------------------------------
+        // 3) Draw the object's mesh
+        // -----------------------------------
+        glBindVertexArray(obj.mesh.vao);
+        glDrawElements(GL_TRIANGLES, obj.mesh.indexCount, GL_UNSIGNED_INT, nullptr);
+
+        // Unbind for cleanliness
+        glBindVertexArray(0);
+        glBindTexture(GL_TEXTURE_2D, 0);
+    }
 
     // Cleanup
-    glBindVertexArray(0);
-    glBindTexture(GL_TEXTURE_2D, 0);
+    glUseProgram(0);
     m_FBO.Unbind();
 }

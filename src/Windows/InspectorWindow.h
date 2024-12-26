@@ -4,13 +4,10 @@
 #include <glm/glm.hpp> // or <glm/vec3.hpp> if you prefer
 #include "imgui.h"
 
-// Example struct for a Transform component
-struct Transform
-{
-    float position[3] = {0.0f, 0.0f, 0.0f};
-    float rotation[3] = {0.0f, 0.0f, 0.0f};
-    float scale[3]    = {1.0f, 1.0f, 1.0f};
-};
+#include "Componenets/GameObject.h"
+#include "Componenets/Mesh.h"
+#include "Componenets/Transform.h"
+
 
 // Example struct for a Script component
 struct Script

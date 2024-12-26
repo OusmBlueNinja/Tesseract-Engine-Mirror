@@ -9,6 +9,12 @@
 #include "Engine/AssetManager.h"
 #include "Windows/InspectorWindow.h"
 
+#include "Componenets/GameObject.h"
+#include "Componenets/Mesh.h"
+#include "Componenets/Transform.h"
+
+#include "TestModel.h"
+
 
 //#define DEBUG
 #include "gcml.h"
@@ -33,6 +39,7 @@ private:
     void ShowDockSpace();
 
 private:
+
 
 
     GLFWwindow* m_Window = nullptr;
