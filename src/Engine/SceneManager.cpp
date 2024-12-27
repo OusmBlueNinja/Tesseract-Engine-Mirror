@@ -5,9 +5,17 @@
 #include "./Componenets/Mesh.h"
 #include "./Componenets/GameObject.h"
 
+#include "imgui.h"
+
+#include "./Windows/LoggerWindow.h"
+
+
 
 #include <yaml-cpp/yaml.h>
 #include <fstream>
+#include <filesystem>
+
+extern LoggerWindow *g_LoggerWindow;
 
 
 
@@ -27,6 +35,14 @@ void SceneManager::SaveScene(const std::vector<std::shared_ptr<GameObject>> &gam
 
 void SceneManager::LoadScene(std::vector<std::shared_ptr<GameObject>> &gameobjects, const std::string &filename)
 {
+    if (!std::filesystem::exists(filename) || !std::filesystem::is_regular_file(filename)) {
+
+        g_LoggerWindow->AddLog("Error: File not found: %s", ImVec4(1.0f,0.0f,0.0f,1.0f), filename.c_str());
+        return;
+    }
+
+
+
     YAML::Node sceneNode = YAML::LoadFile(filename);
     gameobjects.clear();
 

@@ -175,6 +175,18 @@ void MyEngine::Run()
     g_AssetManager.loadAsset(AssetType::TEXTURE, "assets/textures/default.png");
     g_AssetManager.loadAsset(AssetType::TEXTURE, "assets/textures/lush_grass.png");
 
+    // Load a model
+    void* modelPtr = g_AssetManager.loadAsset(AssetType::MODEL, "assets/models/LowPolyFiatUNO.obj");
+    if (modelPtr == nullptr)
+    {
+        DEBUG_PRINT("Failed to load model.");
+    }
+    else
+    {
+        Model* model = reinterpret_cast<Model*>(modelPtr);
+        DEBUG_PRINT("Model loaded successfully with %lld vertices and %lld indices.", model->vertices.size(),  model->indices.size());
+    }
+
     g_GameObjects.push_back(newGameObject);
     DEBUG_PRINT("Put componenent into Global Componenets Subsystem");
 
@@ -324,14 +336,14 @@ void MyEngine::ShowDockSpace()
             if (ImGui::MenuItem("Save"))
             {
                 m_LoggerWindow->AddLog("Saveing Scene", ImVec4(0.3f, 1.0f, 0.3f, 1.0f));
-                g_SceneManager.SaveScene(g_GameObjects, "./Default.scene");
+                g_SceneManager.SaveScene(g_GameObjects, "./scenes/Default.scene");
 
             }
             if (ImGui::MenuItem("Load"))
             {
                 m_LoggerWindow->AddLog("Loading Scene", ImVec4(0.3f, 1.0f, 0.3f, 1.0f));
 
-                g_SceneManager.LoadScene(g_GameObjects, "./Default.scene");
+                g_SceneManager.LoadScene(g_GameObjects, "./scenes/Default.scene");
 
                 
             }

@@ -32,18 +32,23 @@ void InspectorWindow::Show()
             // ===========================
             // 1) TRANSFORM
             // ===========================
-            // Color the Transform header
-            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 0.4f, 1.0f));
-            bool transformOpen = ImGui::CollapsingHeader("Transform##Main", ImGuiTreeNodeFlags_DefaultOpen);
-            ImGui::PopStyleColor();
 
-            if (transformOpen && g_SelectedObject) //! Funny: I did not put a null check here and it broke everything.
+            std::shared_ptr<TransformComponent> transform = g_SelectedObject->GetComponent<TransformComponent>();
+            std::shared_ptr<MeshComponent> mesh = g_SelectedObject->GetComponent<MeshComponent>();
+
+
+            // Color the Transform header
+            
+
+            if (transform && g_SelectedObject) //! Funny: I did not put a null check here and it broke everything.
             {
 
+                ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
+                bool transformOpen = ImGui::CollapsingHeader("Transform##Main", ImGuiTreeNodeFlags_DefaultOpen);
+                ImGui::PopStyleColor();
                 // Transform* transform = &g_SelectedObject->transform;
-                std::shared_ptr<TransformComponent> transform = g_SelectedObject->GetComponent<TransformComponent>();
                 // printf("%p\n", &transform);
-                if (transform)
+                if (transformOpen)
                 {
 
                     if (ImGui::IsItemHovered())
@@ -244,39 +249,36 @@ void InspectorWindow::Show()
                     ImGui::Spacing();
                     ImGui::Separator();
                 }
-                else
-                {
-                    ImGui::Text("Error, Null Component");
-                }
             }
 
-            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 0.4f, 1.0f));
-            bool meshOpen = ImGui::CollapsingHeader("Mesh##Main", ImGuiTreeNodeFlags_DefaultOpen);
-            ImGui::PopStyleColor();
+            
 
-            if (meshOpen && g_SelectedObject) //! Funny: I did not put a null check here and it broke everything.
+            if (mesh && g_SelectedObject) //! Funny: I did not put a null check here and it broke everything.
             {
 
                 // Transform* transform = &g_SelectedObject->transform;
-                std::shared_ptr<MeshComponent> mesh = g_SelectedObject->GetComponent<MeshComponent>();
+
+                ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
+                bool meshOpen = ImGui::CollapsingHeader("Mesh##Main", ImGuiTreeNodeFlags_DefaultOpen);
+                ImGui::PopStyleColor();
                 // printf("%p\n", &transform);
-                if (mesh)
+                if (meshOpen)
                 {
 
                     int vao = static_cast<int>(mesh->vao);
-                    if (ImGui::DragInt("vao", &vao, 1, 0, 1024))
+                    if (ImGui::InputInt("vao", &vao, 1, 0))
                     {
                         mesh->vao = static_cast<GLuint>(vao);
                     }
 
                     int indexCount = static_cast<int>(mesh->indexCount);
-                    if (ImGui::DragInt("indexCount", &indexCount, 1, 0, 1024))
+                    if (ImGui::InputInt("indexCount", &indexCount, 1, 0))
                     {
                         mesh->indexCount = static_cast<GLuint>(indexCount);
                     }
 
                     int textureID = static_cast<int>(mesh->textureID);
-                    if (ImGui::DragInt("textureID", &textureID, 1, 0, 1024))
+                    if (ImGui::InputInt("textureID", &textureID, 1, 0))
                     {
                         mesh->textureID = static_cast<GLuint>(textureID);
                     }

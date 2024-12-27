@@ -1,0 +1,12 @@
+Entities:
+  - ID: 0
+    Name: Default
+    Components:
+      Mesh:
+        vao: 1
+        indexCount: 36
+        textureID: 1
+      Transform:
+        Position: [0, 0, 0]
+        Rotation: [0, 0.5, 0]
+        Scale: [1, 1, 1]

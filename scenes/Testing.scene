@@ -1,14 +1,14 @@
 Entities:
   - ID: 0
-    Name: Default
+    Name: Carrrrr Yeaaa
     Components:
       Mesh:
-        vao: 1
-        indexCount: 36
+        vao: 2
+        indexCount: 200000
         textureID: 1
       Transform:
         Position: [0, 2.79999995, -12.6000004]
-        Rotation: [0, 0.5, -20.6000004]
+        Rotation: [149.699997, -137.899994, -39.2999992]
         Scale: [1, 1, 1]
   - ID: 1
     Name: Cube Yay
@@ -22,7 +22,7 @@ Entities:
         Rotation: [-9, -18.6000004, -28.1000004]
         Scale: [1, 1, 1]
   - ID: 2
-    Name: Cube Yay
+    Name: Cube Yay 2
     Components:
       Mesh:
         vao: 1
@@ -33,7 +33,7 @@ Entities:
         Rotation: [-86.3000031, 0, -66]
         Scale: [1, 1, 1]
   - ID: 3
-    Name: Cube Yay
+    Name: Cube Yay 3
     Components:
       Mesh:
         vao: 1
@@ -44,7 +44,7 @@ Entities:
         Rotation: [-23.5, 15.8999996, -59.9000015]
         Scale: [1, 1, 1]
   - ID: 4
-    Name: Cube Yay
+    Name: Cube Yay 4
     Components:
       Mesh:
         vao: 1
@@ -55,7 +55,7 @@ Entities:
         Rotation: [-17.2999992, -16.1000004, -19.2999992]
         Scale: [1, 1, 1]
   - ID: 5
-    Name: Cube Yay
+    Name: Cube Yay 5
     Components:
       Transform:
         Position: [-6.80000019, 2.70000005, -13.8000002]
@@ -66,7 +66,7 @@ Entities:
         indexCount: 36
         textureID: 6
   - ID: 6
-    Name: Cube Yay
+    Name: Cube Yay 6
     Components:
       Mesh:
         vao: 1
@@ -77,7 +77,7 @@ Entities:
         Rotation: [15.8000002, -18.2000008, -11.1000004]
         Scale: [1, 1, 1]
   - ID: 7
-    Name: Cube Yay
+    Name: Cube Yay 7
     Components:
       Mesh:
         vao: 1
@@ -88,7 +88,7 @@ Entities:
         Rotation: [-16.1000004, -15.8999996, -35]
         Scale: [1, 1, 1]
   - ID: 8
-    Name: Cube Yay
+    Name: Cube Yay 8
     Components:
       Mesh:
         vao: 1
@@ -99,7 +99,7 @@ Entities:
         Rotation: [22.5, -34.2999992, 0]
         Scale: [1, 1, 1]
   - ID: 9
-    Name: Cube Yay
+    Name: Cube Yay 9
     Components:
       Mesh:
         vao: 1
