@@ -187,6 +187,21 @@ void MyEngine::Run()
         DEBUG_PRINT("Model loaded successfully with %lld vertices and %lld indices.", model->vertices.size(),  model->indices.size());
     }
 
+
+// Load a model
+    void* modelPtr2 = g_AssetManager.loadAsset(AssetType::MODEL, "assets/models/OutSidePlant.obj");
+    if (modelPtr2 == nullptr)
+    {
+        DEBUG_PRINT("Failed to load model.");
+    }
+    else
+    {
+        Model* model2 = reinterpret_cast<Model*>(modelPtr2);
+        DEBUG_PRINT("Model loaded successfully with %lld vertices and %lld indices.", model2->vertices.size(),  model2->indices.size());
+    }
+
+
+
     g_GameObjects.push_back(newGameObject);
     DEBUG_PRINT("Put componenent into Global Componenets Subsystem");
 

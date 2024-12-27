@@ -185,7 +185,7 @@ static unsigned int g_CubeIndices[] =
 void RenderWindow::Show()
 {
     
-    ImGui::Begin("OpenGL Output");
+    ImGui::Begin("Editor");
 
     ImVec2 size = ImGui::GetContentRegionAvail();
     int w = static_cast<int>(size.x);
