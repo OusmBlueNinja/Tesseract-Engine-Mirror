@@ -6,7 +6,7 @@
 
 
 
-extern int LoaddedAssets;
+extern int LoadedAssets;
 extern int g_GPU_Triangles_drawn_to_screen;
 
 const char* polygonModeOptions[] = { "Fill", "Wireframe", "Points" };
@@ -160,7 +160,7 @@ void PerformanceWindow::Show(float fps, float ms)
     ImGui::Separator();
 
     // Show asset count
-    ImGui::TextColored(ImVec4(0.4f, 1.0f, 0.4f, 1.0f), "Assets: %d", LoaddedAssets);
+    ImGui::TextColored(ImVec4(0.4f, 1.0f, 0.4f, 1.0f), "Assets: %d", LoadedAssets);
 
     ImGui::Separator();
 

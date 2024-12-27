@@ -15,6 +15,9 @@ public:
     GLuint indexCount = 0;    // Number of indices to draw
     GLuint textureID = 0;     // The texture handle
 
+
+    std::string MeshPath;
+
     MeshComponent();
     virtual const std::string& GetName() const override;
     static const std::string& GetStaticName();

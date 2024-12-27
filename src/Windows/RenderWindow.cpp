@@ -231,7 +231,7 @@ void RenderWindow::InitGLResources()
     // ----------------------------------------------------
 
     {
-        void *shaderAsset = g_AssetManager.loadAsset(AssetType::SHADER, "assets/shaders/UnlitMaterial");
+        Shader* shaderAsset = g_AssetManager.loadAsset<Shader*>(AssetType::SHADER, "assets/shaders/UnlitMaterial");
         if (!shaderAsset)
         {
             fprintf(stderr, "[RenderWindow] Failed to load shader via AssetManager.\n");
@@ -270,7 +270,7 @@ void RenderWindow::InitGLResources()
     // 3) Load TEXTURE from the asset manager
     // ----------------------------------------------------
     {
-        void *texAsset = g_AssetManager.loadAsset(AssetType::TEXTURE, "assets/textures/wood.png");
+        GLuint texAsset = g_AssetManager.loadAsset<GLuint>(AssetType::TEXTURE, "assets/textures/wood.png");
         if (!texAsset)
         {
             fprintf(stderr, "[RenderWindow] Failed to load texture.\n");
@@ -278,7 +278,7 @@ void RenderWindow::InitGLResources()
         else
         {
             // Cast from void* to GLuint
-            m_TextureID = static_cast<GLuint>(reinterpret_cast<uintptr_t>(texAsset));
+            m_TextureID = texAsset;
         }
     }
 

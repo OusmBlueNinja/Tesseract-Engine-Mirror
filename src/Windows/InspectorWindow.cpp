@@ -320,6 +320,18 @@ void InspectorWindow::Show()
                     {
                         mesh->textureID = static_cast<GLuint>(textureID);
                     }
+                    //    Define a maximum buffer size
+                    const size_t BUFFER_SIZE = 256;
+                    // Allocate a buffer and initialize it with the current string
+                    char buffer[BUFFER_SIZE];
+                    strncpy(buffer, mesh->MeshPath.c_str(), BUFFER_SIZE - 1);
+                    buffer[BUFFER_SIZE - 1] = '\0'; // Ensure null-termination
+                    // Render the InputText widget
+                    if (ImGui::InputText(mesh->MeshPath.c_str(), buffer, BUFFER_SIZE))
+                    {
+                        // Update the string if user made changes
+                        mesh->MeshPath = buffer;
+                    }
                 }
             }
             ImGui::Spacing();

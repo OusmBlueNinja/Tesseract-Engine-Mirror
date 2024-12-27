@@ -31,7 +31,7 @@ std::shared_ptr<GameObject> CreateDefaultCube()
 
     mesh->vao = CreateCubeVAO();
     mesh->indexCount = 36;
-    mesh->textureID = static_cast<GLuint>(reinterpret_cast<uintptr_t>(g_AssetManager.loadAsset(AssetType::TEXTURE, "assets/textures/wood.png")));
+    mesh->textureID = g_AssetManager.loadAsset<GLuint>(AssetType::TEXTURE, "assets/textures/wood.png");
 
     return newGameObject;
 }

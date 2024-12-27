@@ -1,0 +1,25 @@
+Entities:
+  - ID: 0
+    Name: Default
+    Components:
+      Mesh:
+        vao: 3
+        indexCount: 2304
+        textureID: 1
+        MeshPath: assets/models/DefaultMesh.obj
+      Transform:
+        Position: [0, 0.400000006, 3.5]
+        Rotation: [-179.5, -135.5, 0]
+        Scale: [1, 1, 1]
+  - ID: 1
+    Name: New GameObject 1
+    Components:
+      Mesh:
+        vao: 1
+        indexCount: 36
+        textureID: 5
+        MeshPath: assets/models/DefaultMesh.obj
+      Transform:
+        Position: [0, -2.9000001, -100]
+        Rotation: [0, 0, 0]
+        Scale: [100, 100, 400]

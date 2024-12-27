@@ -150,7 +150,7 @@ void MyEngine::Run()
         // printf("Got Valid Mesh Component\n");
         mesh->vao = CreateCubeVAO();
         mesh->indexCount = 36;
-        mesh->textureID = static_cast<GLuint>(reinterpret_cast<uintptr_t>(g_AssetManager.loadAsset(AssetType::TEXTURE, "assets/textures/wood.png")));
+        mesh->textureID = g_AssetManager.loadAsset<GLuint>(AssetType::TEXTURE, "assets/textures/wood.png");
     }
     else
     {
@@ -171,12 +171,14 @@ void MyEngine::Run()
         DEBUG_PRINT("Could not find Transform Component");
     }
 
-    g_AssetManager.loadAsset(AssetType::TEXTURE, "assets/textures/bricks.png");
-    g_AssetManager.loadAsset(AssetType::TEXTURE, "assets/textures/default.png");
-    g_AssetManager.loadAsset(AssetType::TEXTURE, "assets/textures/lush_grass.png");
+    g_AssetManager.loadAsset<GLuint>(AssetType::TEXTURE, "assets/textures/bricks.png");
+    g_AssetManager.loadAsset<GLuint>(AssetType::TEXTURE, "assets/textures/default.png");
+    g_AssetManager.loadAsset<GLuint>(AssetType::TEXTURE, "assets/textures/lush_grass.png");
+    g_AssetManager.loadAsset<GLuint>(AssetType::TEXTURE, "assets/textures/vegetation_tree_bark_40.png");
+
 
     // Load a model
-    void* modelPtr = g_AssetManager.loadAsset(AssetType::MODEL, "assets/models/LowPolyFiatUNO.obj");
+    Model* modelPtr = g_AssetManager.loadAsset<Model*>(AssetType::MODEL, "assets/models/LowPolyFiatUNO.obj");
     if (modelPtr == nullptr)
     {
         DEBUG_PRINT("Failed to load model.");
@@ -188,18 +190,11 @@ void MyEngine::Run()
     }
 
 
-// Load a model
-    void* modelPtr2 = g_AssetManager.loadAsset(AssetType::MODEL, "assets/models/OutSidePlant.obj");
-    if (modelPtr2 == nullptr)
-    {
-        DEBUG_PRINT("Failed to load model.");
-    }
-    else
-    {
-        Model* model2 = reinterpret_cast<Model*>(modelPtr2);
-        DEBUG_PRINT("Model loaded successfully with %lld vertices and %lld indices.", model2->vertices.size(),  model2->indices.size());
-    }
+    Model* modelPtr4 = g_AssetManager.loadAsset<Model*>(AssetType::MODEL, "assets/models/shopping-cart.obj");
 
+    Model* model4 = reinterpret_cast<Model*>(modelPtr4);
+
+    DEBUG_PRINT("Model loaded successfully with %lld vertices and %lld indices.", model4->vertices.size(),  model4->indices.size());
 
 
     g_GameObjects.push_back(newGameObject);
