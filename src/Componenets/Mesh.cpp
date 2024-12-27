@@ -69,7 +69,7 @@ void MeshComponent::Deserialize(const YAML::Node& node)
         MeshPath = static_cast<std::string>(node["MeshPath"].as<std::string>());
         g_AssetManager->DebugAssetMap();
 
-        #if 1
+        #if 0
 
         DEBUG_PRINT("Loading Mesh: >%s<", MeshPath.c_str());
 

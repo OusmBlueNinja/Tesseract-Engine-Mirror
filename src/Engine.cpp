@@ -176,6 +176,9 @@ void MyEngine::Run()
     g_AssetManager.loadAsset<GLuint>(AssetType::TEXTURE, "assets/textures/lush_grass.png");
     g_AssetManager.loadAsset<GLuint>(AssetType::TEXTURE, "assets/textures/vegetation_tree_bark_40.png");
 
+    g_AssetManager.loadAsset<GLuint>(AssetType::TEXTURE, "assets/textures/sky.png");
+
+
 
     // Load a model
     Model* modelPtr = g_AssetManager.loadAsset<Model*>(AssetType::MODEL, "assets/models/LowPolyFiatUNO.obj");

@@ -333,6 +333,10 @@ void InspectorWindow::Show()
                         mesh->MeshPath = buffer;
                     }
                 }
+                float availableWidth = ImGui::GetContentRegionAvail().x;
+
+                ImGui::Image(mesh->textureID, ImVec2(availableWidth,availableWidth), ImVec2(0, 0), ImVec2(1, 1));
+
             }
             ImGui::Spacing();
 
