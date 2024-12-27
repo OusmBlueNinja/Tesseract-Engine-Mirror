@@ -83,7 +83,7 @@ void GameObject::Deserialize(const YAML::Node &node)
                 transform->Deserialize(compNode);
                 AddComponent(transform);
             }
-            if (compName == MeshComponent::GetStaticName())
+            else if (compName == MeshComponent::GetStaticName())
             {
                 auto mesh = std::make_shared<MeshComponent>();
                 mesh->Deserialize(compNode);

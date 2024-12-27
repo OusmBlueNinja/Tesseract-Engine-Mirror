@@ -323,13 +323,14 @@ void MyEngine::ShowDockSpace()
             }
             if (ImGui::MenuItem("Save"))
             {
-                m_LoggerWindow->AddLog("Saveing Scene");
+                m_LoggerWindow->AddLog("Saveing Scene", ImVec4(0.3f, 1.0f, 0.3f, 1.0f));
                 g_SceneManager.SaveScene(g_GameObjects, "./Default.scene");
 
             }
             if (ImGui::MenuItem("Load"))
             {
-                m_LoggerWindow->AddLog("Loading Scene");
+                m_LoggerWindow->AddLog("Loading Scene", ImVec4(0.3f, 1.0f, 0.3f, 1.0f));
+
                 g_SceneManager.LoadScene(g_GameObjects, "./Default.scene");
 
                 
