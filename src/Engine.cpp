@@ -37,6 +37,8 @@ AssetManager g_AssetManager;
 
 LoggerWindow *g_LoggerWindow;
 
+SceneManager g_SceneManager;
+
 std::vector<std::shared_ptr<GameObject>> g_GameObjects;
 
 int g_GPU_Triangles_drawn_to_screen = 0;
@@ -322,11 +324,14 @@ void MyEngine::ShowDockSpace()
             if (ImGui::MenuItem("Save"))
             {
                 m_LoggerWindow->AddLog("Saveing Scene");
+                g_SceneManager.SaveScene(g_GameObjects, "./Default.scene");
 
             }
             if (ImGui::MenuItem("Load"))
             {
                 m_LoggerWindow->AddLog("Loading Scene");
+                g_SceneManager.LoadScene(g_GameObjects, "./Default.scene");
+
                 
             }
             ImGui::EndMenu();

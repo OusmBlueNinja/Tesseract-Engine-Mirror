@@ -1,9 +1,9 @@
 #include "SceneManager.h"
 
-#include "Component.h"
-#include "Transform.h"
-#include "Mesh.h"
-#include "GameObject.h"
+#include "./Componenets/Component.h"
+#include "./Componenets/Transform.h"
+#include "./Componenets/Mesh.h"
+#include "./Componenets/GameObject.h"
 
 
 #include <yaml-cpp/yaml.h>

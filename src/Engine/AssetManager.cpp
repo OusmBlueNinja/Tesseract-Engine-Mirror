@@ -45,7 +45,7 @@ void* AssetManager::loadAsset(AssetType type, const std::string& path)
 
     LoaddedAssets += 1;
 
-    g_LoggerWindow->AddLog("Loadded Asset: %s", path.c_str());
+    g_LoggerWindow->AddLog("[AsseetManager] Loadded Asset: %s", path.c_str());
 
     // 5) Return pointer
     return assetData;

@@ -3,6 +3,13 @@
 #include "Transform.h"
 #include <iostream>
 
+#include "../Windows/LoggerWindow.h"
+
+
+
+extern LoggerWindow *g_LoggerWindow;
+
+
 GameObject::GameObject(int id, const std::string &name)
     : id(id), name(name)    
 {
@@ -50,6 +57,8 @@ YAML::Node GameObject::Serialize()
 
 void GameObject::Deserialize(const YAML::Node &node)
 {
+
+
     if (node["ID"])
     {
         id = node["ID"].as<int>();
@@ -61,8 +70,10 @@ void GameObject::Deserialize(const YAML::Node &node)
     if (node["Components"])
     {
         YAML::Node componentsNode = node["Components"];
+
         for (auto it = componentsNode.begin(); it != componentsNode.end(); ++it)
         {
+            
             std::string compName = it->first.as<std::string>();
             YAML::Node compNode = it->second;
 
@@ -72,9 +83,16 @@ void GameObject::Deserialize(const YAML::Node &node)
                 transform->Deserialize(compNode);
                 AddComponent(transform);
             }
+            if (compName == MeshComponent::GetStaticName())
+            {
+                auto mesh = std::make_shared<MeshComponent>();
+                mesh->Deserialize(compNode);
+                AddComponent(mesh);
+            }
             else
             {
-                std::cout << "[Poly] [De/Serialize] [ERROR] Invalid Component Type '" << compName << "' Skipping" << std::endl;
+                g_LoggerWindow->AddLog("[SceneManager] Failed to load Component:  %s", compName.c_str());
+                
             }
             // Add deserialization for other components as needed
         }

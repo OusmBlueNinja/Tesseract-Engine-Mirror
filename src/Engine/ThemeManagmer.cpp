@@ -284,7 +284,7 @@ void SetupImGuiStyle_Windark()
 
 void ThemeManager_ChangeTheme(int ThemeID)
 {
-    g_LoggerWindow->AddLog("Changed Global Theme To: %d", ThemeID);
+    g_LoggerWindow->AddLog("[ThemeManager] Changed Global Theme To: %d", ThemeID);
 
     switch (ThemeID) {
         case 0:
