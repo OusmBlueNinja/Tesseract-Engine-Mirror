@@ -8,12 +8,15 @@ A 3D Game engine for Small to Medium-sized games with a LUA Scripting interface.
 
 
 #### 0.0.50
+- Added Texture Preview and Automatic Texture and Model Loading
 ![](./assets/images/SS-Dev2_0.png)
 
 #### 0.0.45
+- Added support for OBJ files
 ![](./assets/images/SS-Dev1_4.png)
 
 #### 0.0.37
+- Added Dynamic Texture suport. 
 ![](./assets/images/SS-Dev1_3.png)
 
 #### 0.0.33
