@@ -2,113 +2,113 @@ Entities:
   - ID: 0
     Name: Car
     Components:
+      Transform:
+        Position: [0, 2.79999995, -12.6000004]
+        Rotation: [149.699997, -137.899994, -39.2999992]
+        Scale: [1, 1, 1]
       Mesh:
         vao: 2
         indexCount: 15810
         textureID: 1
         MeshPath: assets/models/LowPolyFiatUNO.obj
-      Transform:
-        Position: [0, 2.79999995, -12.6000004]
-        Rotation: [149.699997, -137.899994, -39.2999992]
-        Scale: [1, 1, 1]
   - ID: 2
-    Name: Cube Yay 2
+    Name: Null Texture Box
     Components:
+      Transform:
+        Position: [7.80000019, -8.10000038, -20.6000004]
+        Rotation: [-86.3000031, 0, -66]
+        Scale: [1, 1, 1]
       Mesh:
         vao: 5
         indexCount: 36
         textureID: 3
         MeshPath: assets/models/DefaultMesh.obj
-      Transform:
-        Position: [7.80000019, -8.10000038, -20.6000004]
-        Rotation: [-86.3000031, 0, -66]
-        Scale: [1, 1, 1]
   - ID: 3
-    Name: Cube Yay 3
+    Name: Grass Box Top
     Components:
+      Transform:
+        Position: [-1.20000005, -3.4000001, -17.7000008]
+        Rotation: [-23.5, 15.8999996, -59.9000015]
+        Scale: [1, 1, 1]
       Mesh:
         vao: 5
         indexCount: 36
         textureID: 4
         MeshPath: assets/models/DefaultMesh.obj
-      Transform:
-        Position: [-1.20000005, -3.4000001, -17.7000008]
-        Rotation: [-23.5, 15.8999996, -59.9000015]
-        Scale: [1, 1, 1]
   - ID: 4
-    Name: Cube Yay 4
+    Name: Bark Box
     Components:
+      Transform:
+        Position: [8.10000038, 0.800000012, -12]
+        Rotation: [-17.2999992, -16.1000004, -19.2999992]
+        Scale: [1, 1, 1]
       Mesh:
         vao: 5
         indexCount: 36
         textureID: 5
         MeshPath: assets/models/DefaultMesh.obj
-      Transform:
-        Position: [8.10000038, 0.800000012, -12]
-        Rotation: [-17.2999992, -16.1000004, -19.2999992]
-        Scale: [1, 1, 1]
   - ID: 5
-    Name: Sky
+    Name: Skybox
     Components:
-      Transform:
-        Position: [0, 0, 43.2000008]
-        Rotation: [0, 0, 0]
-        Scale: [100, 100, 100]
       Mesh:
         vao: 5
         indexCount: 36
         textureID: 6
         MeshPath: assets/models/DefaultMesh.obj
+      Transform:
+        Position: [0, 0, 43.2000008]
+        Rotation: [0, 0, 0]
+        Scale: [100, 100, 100]
   - ID: 6
-    Name: Cube Yay 6
+    Name: Null Texture Box
     Components:
+      Transform:
+        Position: [-6.5, -6, -18]
+        Rotation: [15.8000002, -18.2000008, -11.1000004]
+        Scale: [1, 1, 1]
       Mesh:
         vao: 5
         indexCount: 36
         textureID: 3
         MeshPath: assets/models/DefaultMesh.obj
-      Transform:
-        Position: [-6.5, -6, -18]
-        Rotation: [15.8000002, -18.2000008, -11.1000004]
-        Scale: [1, 1, 1]
   - ID: 7
-    Name: Cube Yay 7
+    Name: Grass Box Bottom
     Components:
+      Transform:
+        Position: [6.5999999, 1.79999995, -23.8999996]
+        Rotation: [-16.1000004, -15.8999996, -35]
+        Scale: [1, 1, 1]
       Mesh:
         vao: 5
         indexCount: 36
         textureID: 4
         MeshPath: assets/models/DefaultMesh.obj
-      Transform:
-        Position: [6.5, 1.79999995, -23.8999996]
-        Rotation: [-16.1000004, -15.8999996, -35]
-        Scale: [1, 1, 1]
   - ID: 8
-    Name: Cube Yay 8
+    Name: Wood Box
     Components:
+      Transform:
+        Position: [-7.80000019, 0.200000003, -29.7999992]
+        Rotation: [22.2999992, -32.7999992, 0]
+        Scale: [1, 1, 1]
       Mesh:
         vao: 5
         indexCount: 36
         textureID: 1
         MeshPath: assets/models/DefaultMesh.obj
-      Transform:
-        Position: [-7.80000019, 0.200000003, -29.7999992]
-        Rotation: [22.2999992, -32.7999992, 0]
-        Scale: [1, 1, 1]
   - ID: 9
-    Name: Cube Yay 9
+    Name: Bricks
     Components:
+      Transform:
+        Position: [5.5, -2.9000001, -19.5]
+        Rotation: [-41.4000015, -22.6000004, -52.2999992]
+        Scale: [1, 1, 1]
       Mesh:
         vao: 5
         indexCount: 36
         textureID: 2
         MeshPath: assets/models/DefaultMesh.obj
-      Transform:
-        Position: [5.5, -2.9000001, -19.5]
-        Rotation: [-41.4000015, -22.6000004, -52.2999992]
-        Scale: [1, 1, 1]
   - ID: 10
-    Name: Script
+    Name: Script Handler
     Components:
       ScriptComponent:
         ScriptPath: assets/scripts/script.lua

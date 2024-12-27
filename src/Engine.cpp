@@ -2,7 +2,7 @@
 
 // Settings
 
-#define VSync 1
+#define VSync 0
 
 #include "Engine.h"
 #include <cstdio>

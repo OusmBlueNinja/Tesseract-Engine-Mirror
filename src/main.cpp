@@ -9,11 +9,11 @@
 int main()
 {
     DEBUG_PRINT("[START] Creating Global Engine ");
-
+    // Small error where the constuctor would crash 
     MyEngine engine;
     DEBUG_PRINT("[OK] Creating Global Engine ");
 
-    // Initialize the engine (creates GLFW window, sets up ImGui, etc.)
+
     if (!engine.Init(1280, 720, "Tesseract Engine"))
     {
         fprintf(stderr, "Failed to initialize engine.\n");

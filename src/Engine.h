@@ -6,7 +6,6 @@
 #include "Windows/RenderWindow.h"
 #include "Windows/PerformanceWindow.h"
 #include "Windows/LoggerWindow.h"
-#include "Engine/AssetManager.h"
 #include "Windows/InspectorWindow.h"
 #include "Windows/SceneWindow.h"
 
@@ -14,8 +13,15 @@
 #include "Componenets/Mesh.h"
 #include "Componenets/Transform.h"
 
-#include "TestModel.h"
+#include "Engine/AssetManager.h"
+#include "Engine/ThemeManager.h"
+#include "Engine/SceneManager.h"
 #include "Engine/LuaAPI.h"
+
+
+
+#include "TestModel.h"
+
 
 #include "gcml.h"
 
