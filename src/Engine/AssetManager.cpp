@@ -52,7 +52,7 @@ void AssetManager::DebugAssetMap()
 // Implementation of AssetManager::loadAssetFromDisk
 AssetManager::AssetVariant AssetManager::loadAssetFromDisk(AssetType type, const std::string &path)
 {
-    DebugAssetMap();
+    //DebugAssetMap();
     switch (type)
     {
     case AssetType::TEXTURE:

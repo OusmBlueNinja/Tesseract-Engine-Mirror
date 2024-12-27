@@ -75,7 +75,7 @@ public:
         if (it != m_AssetMap.end())
         {
             // Debug: Log the variant type
-            std::cout << "[AssetManager] Found asset in map." << std::endl;
+            DEBUG_PRINT("[AssetManager] Found asset in map.");
             if (std::holds_alternative<T>(it->second))
             {
                 return std::get<T>(it->second);

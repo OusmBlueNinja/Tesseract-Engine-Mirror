@@ -1,37 +1,13 @@
 Entities:
   - ID: 0
-    Name: Car
+    Name: Default
     Components:
-      Transform:
-        Position: [1, 1.10000002, -4.30000019]
-        Rotation: [-21.5, -65.3000031, -180]
-        Scale: [1, 1, 1]
       Mesh:
-        vao: 2
-        indexCount: 15810
+        vao: 1
+        indexCount: 36
         textureID: 1
         MeshPath: assets/models/DefaultMesh.obj
-  - ID: 1
-    Name: Shopping Cart
-    Components:
       Transform:
-        Position: [-1.39999998, 1, 1.20000005]
-        Rotation: [-180, -136, 0]
-        Scale: [2, 2, 2]
-      Mesh:
-        vao: 3
-        indexCount: 2304
-        textureID: 5
-        MeshPath: assets/models/DefaultMesh.obj
-  - ID: 2
-    Name: Skybox
-    Components:
-      Mesh:
-        vao: 5
-        indexCount: 36
-        textureID: 6
-        MeshPath: assets/models/DefaultMesh.obj
-      Transform:
-        Position: [0, 0, -190.5]
-        Rotation: [0, -56.5999985, 0]
-        Scale: [200, 200, 200]
+        Position: [0, 0, 0]
+        Rotation: [0, 0.5, 0]
+        Scale: [1, 1, 1]

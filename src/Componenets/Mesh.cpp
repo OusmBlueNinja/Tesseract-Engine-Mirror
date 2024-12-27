@@ -5,11 +5,10 @@
 
 #include "../Engine/AssetManager.h"
 
-
 extern AssetManager g_AssetManager;
 
-//TODO: Make this have a OBJ path, make indexCount derive from AssetManager
-//TODO: and make texture id also get from AssetManager
+// TODO: Make this have a OBJ path, make indexCount derive from AssetManager
+// TODO: and make texture id also get from AssetManager
 //?     Procastinate
 
 const std::string MeshComponent::name = "Mesh";
@@ -19,12 +18,12 @@ MeshComponent::MeshComponent()
 {
 }
 
-const std::string& MeshComponent::GetName() const
+const std::string &MeshComponent::GetName() const
 {
     return name;
 }
 
-const std::string& MeshComponent::GetStaticName()
+const std::string &MeshComponent::GetStaticName()
 {
     return name;
 }
@@ -32,23 +31,17 @@ const std::string& MeshComponent::GetStaticName()
 YAML::Node MeshComponent::Serialize()
 {
     YAML::Node node;
-    
+
     node["vao"] = static_cast<int>(vao);
     node["indexCount"] = static_cast<int>(indexCount);
     node["textureID"] = static_cast<int>(textureID);
 
     node["MeshPath"] = static_cast<std::string>(MeshPath);
 
-
-
-
-
-
-
     return node;
 }
 
-void MeshComponent::Deserialize(const YAML::Node& node)
+void MeshComponent::Deserialize(const YAML::Node &node)
 {
     if (node["vao"])
     {
@@ -63,23 +56,35 @@ void MeshComponent::Deserialize(const YAML::Node& node)
         textureID = static_cast<int>(node["textureID"].as<int>());
     }
 
-
     if (node["MeshPath"])
     {
         MeshPath = static_cast<std::string>(node["MeshPath"].as<std::string>());
-        g_AssetManager.DebugAssetMap();
+        // g_AssetManager.DebugAssetMap();
 
-        #if 1
+#if 1
 
-        DEBUG_PRINT("Loading Mesh: >%s<", MeshPath.c_str());
+        DEBUG_PRINT("Loading Mesh: %s", MeshPath.c_str());
 
-        Model* model = g_AssetManager.loadAsset<Model*>(AssetType::MODEL, MeshPath.c_str());
-        DEBUG_PRINT("Model loaded successfully with %lld vertices and %lld indices.", model->vertices.size(),  model->indices.size());
-        
-        #else
+        Model *model = g_AssetManager.loadAsset<Model *>(AssetType::MODEL, MeshPath.c_str());
+        DEBUG_PRINT("Model loaded successfully with %lld vertices and %lld indices.", model->vertices.size(), model->indices.size());
+
+        if (model->vao != 0)
+        {
+            vao = model->vao;
+        }
+        if (model->indices.size() != 0)
+        {
+            indexCount = model->indices.size();
+        }
+        if (textureID != 0)
+        {
+            textureID = model->textureID;
+        }
+
+#else
 
         DEBUG_PRINT("Automatic Mesh Loading Disabled.");
 
-        #endif
+#endif
     }
 }
