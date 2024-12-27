@@ -53,6 +53,7 @@ void AssetManager::DebugAssetMap()
 AssetManager::AssetVariant AssetManager::loadAssetFromDisk(AssetType type, const std::string &path)
 {
     //DebugAssetMap();
+    LoadedAssets = m_AssetMap.size();
     switch (type)
     {
     case AssetType::TEXTURE:

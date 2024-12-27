@@ -11,8 +11,6 @@
 #include <GLFW/glfw3.h>
 #include <string>
 
-
-
 // Dear ImGui
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
@@ -26,7 +24,7 @@
 
 #include "Engine/ThemeManager.h"
 #include "Engine/SceneManager.h"
-
+#include "Engine/LuaAPI.h"
 
 // #define YAML_CPP_STATIC_DEFINE
 #include <yaml-cpp/yaml.h>
@@ -108,15 +106,19 @@ bool MyEngine::Init(int width, int height, const std::string &title)
     m_InspectorWindow = std::make_unique<InspectorWindow>();
     m_SceneWindow = std::make_unique<SceneWindow>();
 
+    g_LoggerWindow = m_LoggerWindow.get();
+
+
+    // Optionally, call 'onInit' Lua function
+
     // Some initial logs
     m_LoggerWindow->AddLog("Engine initialized.");
     m_LoggerWindow->AddLog("Welcome to Tesseract Engine!");
 
-    g_LoggerWindow = m_LoggerWindow.get();
-
     m_Running = true;
     m_LastTime = glfwGetTime();
     DEBUG_PRINT("[OK] Engine Init ");
+
 
     return true;
 }
@@ -178,27 +180,23 @@ void MyEngine::Run()
 
     g_AssetManager.loadAsset<GLuint>(AssetType::TEXTURE, "assets/textures/sky.png");
 
-
-
     // Load a model
-    Model* modelPtr = g_AssetManager.loadAsset<Model*>(AssetType::MODEL, "assets/models/LowPolyFiatUNO.obj");
+    Model *modelPtr = g_AssetManager.loadAsset<Model *>(AssetType::MODEL, "assets/models/LowPolyFiatUNO.obj");
     if (modelPtr == nullptr)
     {
         DEBUG_PRINT("Failed to load model.");
     }
     else
     {
-        Model* model = reinterpret_cast<Model*>(modelPtr);
-        DEBUG_PRINT("Model loaded successfully with %lld vertices and %lld indices.", model->vertices.size(),  model->indices.size());
+        Model *model = reinterpret_cast<Model *>(modelPtr);
+        DEBUG_PRINT("Model loaded successfully with %lld vertices and %lld indices.", model->vertices.size(), model->indices.size());
     }
 
+    Model *modelPtr4 = g_AssetManager.loadAsset<Model *>(AssetType::MODEL, "assets/models/shopping-cart.obj");
 
-    Model* modelPtr4 = g_AssetManager.loadAsset<Model*>(AssetType::MODEL, "assets/models/shopping-cart.obj");
+    Model *model4 = reinterpret_cast<Model *>(modelPtr4);
 
-    Model* model4 = reinterpret_cast<Model*>(modelPtr4);
-
-    DEBUG_PRINT("Model loaded successfully with %lld vertices and %lld indices.", model4->vertices.size(),  model4->indices.size());
-
+    DEBUG_PRINT("Model loaded successfully with %lld vertices and %lld indices.", model4->vertices.size(), model4->indices.size());
 
     g_GameObjects.push_back(newGameObject);
     DEBUG_PRINT("Put componenent into Global Componenets Subsystem");
@@ -212,19 +210,29 @@ void MyEngine::Run()
 
     while (!glfwWindowShouldClose(m_Window) && m_Running)
     {
-        // Poll
+        // Poll events
         glfwPollEvents();
 
-        // Calculate FPS
+        // Calculate current time
         double current_time = glfwGetTime();
-        double delta = current_time - m_LastTime;
+
+        // Calculate per-frame delta time
+        double frame_delta = current_time - m_LastFrameTime;
+        m_LastFrameTime = current_time;
+
+        // Accumulate time for FPS calculation
+        m_TimeAccumulator += frame_delta;
         m_FrameCount++;
-        if (delta >= 0.1)
+
+        // Update FPS every 0.1 seconds
+        if (m_TimeAccumulator >= 0.1)
         {
-            m_Fps = (float)(m_FrameCount / delta);
-            m_Ms = 100.0f / m_Fps;
+            m_Fps = static_cast<float>(m_FrameCount / m_TimeAccumulator);
+            m_Ms = 100.0f / m_Fps; // Assuming m_Ms represents milliseconds per frame
+
+            // Reset counters
             m_FrameCount = 0;
-            m_LastTime = current_time;
+            m_TimeAccumulator = 0.0;
         }
 
         // Start new frame
@@ -235,7 +243,23 @@ void MyEngine::Run()
 
         m_InspectorWindow->Show();
 
-        // Show our windows
+
+        if (1) {
+            for (auto& Gameobject : g_GameObjects) {
+                
+                // Handle Componenets That require Updates
+
+                std::shared_ptr<ScriptComponent> script = Gameobject->GetComponent<ScriptComponent>();
+                if (script){ // Stupid Null Checks
+                    script->Update(frame_delta);
+                } 
+
+
+            }
+        }
+
+        // Pass per-frame delta time to Lua
+
         m_RenderWindow->Show(); // The spinning triangle as ImGui::Image
 
         m_PerformanceWindow->Show(m_Fps, m_Ms); // FPS & ms
@@ -245,12 +269,12 @@ void MyEngine::Run()
         m_SceneWindow->Show();
 
         // After rendering
-
         m_PerformanceWindow->UpdatePerformanceStats(-1, g_GPU_Triangles_drawn_to_screen);
 
         // End frame
         EndFrame();
     }
+
     DEBUG_PRINT("[OK] Engine Run ");
 }
 
@@ -350,15 +374,12 @@ void MyEngine::ShowDockSpace()
             {
                 m_LoggerWindow->AddLog("Saveing Scene", ImVec4(0.3f, 1.0f, 0.3f, 1.0f));
                 g_SceneManager.SaveScene(g_GameObjects, "./scenes/Default.scene");
-
             }
             if (ImGui::MenuItem("Load"))
             {
                 m_LoggerWindow->AddLog("Loading Scene", ImVec4(0.3f, 1.0f, 0.3f, 1.0f));
 
                 g_SceneManager.LoadScene(g_GameObjects, "./scenes/Default.scene");
-
-                
             }
             ImGui::EndMenu();
         }

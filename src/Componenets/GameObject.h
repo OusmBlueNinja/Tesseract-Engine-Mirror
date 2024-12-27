@@ -7,6 +7,7 @@
 
 #include "Component.h"
 #include "Transform.h"
+#include "ScriptComponent.h"
 #include "Mesh.h"
 
 #include <yaml-cpp/yaml.h>

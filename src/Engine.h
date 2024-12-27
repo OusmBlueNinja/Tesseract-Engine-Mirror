@@ -10,14 +10,12 @@
 #include "Windows/InspectorWindow.h"
 #include "Windows/SceneWindow.h"
 
-
 #include "Componenets/GameObject.h"
 #include "Componenets/Mesh.h"
 #include "Componenets/Transform.h"
 
 #include "TestModel.h"
-
-
+#include "Engine/LuaAPI.h"
 
 #include "gcml.h"
 
@@ -28,9 +26,7 @@ struct GLFWwindow;
 class MyEngine
 {
 public:
-    
-
-    bool Init(int width, int height, const std::string& title);
+    bool Init(int width, int height, const std::string &title);
     void Run();
     void Cleanup();
 
@@ -42,23 +38,22 @@ private:
 
 private:
 
-
-
-    GLFWwindow* m_Window = nullptr;
+    GLFWwindow *m_Window = nullptr;
     bool m_Running = false;
 
     // Windows
-    std::unique_ptr<RenderWindow>       m_RenderWindow;
-    std::unique_ptr<PerformanceWindow>  m_PerformanceWindow;
-    std::unique_ptr<LoggerWindow>       m_LoggerWindow;
-    std::unique_ptr<InspectorWindow>    m_InspectorWindow;
-    std::unique_ptr<SceneWindow>        m_SceneWindow;
+    std::unique_ptr<RenderWindow> m_RenderWindow;
+    std::unique_ptr<PerformanceWindow> m_PerformanceWindow;
+    std::unique_ptr<LoggerWindow> m_LoggerWindow;
+    std::unique_ptr<InspectorWindow> m_InspectorWindow;
+    std::unique_ptr<SceneWindow> m_SceneWindow;
 
-
+    double m_LastFrameTime = 0.0; // Initialize with the current time
+    double m_TimeAccumulator = 0.0;
 
     // For FPS calculation
     float m_Fps = 0.0f;
-    float m_Ms  = 0.0f;
+    float m_Ms = 0.0f;
     double m_LastTime = 0.0;
-    int m_FrameCount  = 0;
+    int m_FrameCount = 0;
 };

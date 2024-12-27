@@ -74,13 +74,15 @@ void InspectorWindow::Show()
             // ===========================
             // 1) TRANSFORM
             // ===========================
-
+            
             std::shared_ptr<TransformComponent> transform = g_SelectedObject->GetComponent<TransformComponent>();
             std::shared_ptr<MeshComponent> mesh = g_SelectedObject->GetComponent<MeshComponent>();
+            std::shared_ptr<ScriptComponent> script = g_SelectedObject->GetComponent<ScriptComponent>();
+
 
             // Color the Transform header
 
-            if (transform && g_SelectedObject) //! Funny: I did not put a null check here and it broke everything.
+            if (transform && g_SelectedObject) // Funny: I did not put a null check here and it broke everything.
             {
 
                 ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
@@ -291,7 +293,7 @@ void InspectorWindow::Show()
                 }
             }
 
-            if (mesh && g_SelectedObject) //! Funny: I did not put a null check here and it broke everything.
+            if (mesh && g_SelectedObject) 
             {
 
                 // Transform* transform = &g_SelectedObject->transform;
@@ -338,6 +340,35 @@ void InspectorWindow::Show()
                 }
             }
             ImGui::Spacing();
+
+            if (script && g_SelectedObject)
+            {
+
+                // Transform* transform = &g_SelectedObject->transform;
+
+                ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
+                bool scriptOpen = ImGui::CollapsingHeader("Script##Main", ImGuiTreeNodeFlags_DefaultOpen);
+                ImGui::PopStyleColor();
+
+
+                // printf("%p\n", &transform);
+                if (scriptOpen)
+                {
+                    //    Define a maximum buffer size
+                    const size_t BUFFER_SIZE = 256;
+                    // Allocate a buffer and initialize it with the current string
+                    char buffer[BUFFER_SIZE];
+                    strncpy(buffer, script->ScriptPath.c_str(), BUFFER_SIZE - 1);
+                    buffer[BUFFER_SIZE - 1] = '\0'; // Ensure null-termination
+                    // Render the InputText widget
+                    if (ImGui::InputText(script->ScriptPath.c_str(), buffer, BUFFER_SIZE))
+                    {
+                        // Update the string if user made changes
+                        script->ScriptPath = buffer;
+                    }
+
+                }
+            }
 
             // ===========================
             // 2) SCRIPT

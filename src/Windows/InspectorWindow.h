@@ -7,6 +7,8 @@
 #include "Componenets/GameObject.h"
 #include "Componenets/Mesh.h"
 #include "Componenets/Transform.h"
+#include "Componenets/ScriptComponent.h"
+
 
 
 // Example struct for a Script component

@@ -2,6 +2,7 @@
 #include "GameObject.h"
 #include "Transform.h"
 #include <iostream>
+#include "gcml.h"
 
 #include "../Windows/LoggerWindow.h"
 
@@ -89,9 +90,16 @@ void GameObject::Deserialize(const YAML::Node &node)
                 mesh->Deserialize(compNode);
                 AddComponent(mesh);
             }
+            else if (compName == ScriptComponent::GetStaticName())
+            {
+                auto ScriptComp = std::make_shared<ScriptComponent>();
+                ScriptComp->Deserialize(compNode);
+                AddComponent(ScriptComp);
+            }
             else
             {
                 g_LoggerWindow->AddLog("[SceneManager] Failed to load Component:  %s", compName.c_str());
+                DEBUG_PRINT("[SceneManager] Failed to load Component: %s", compName.c_str());
                 
             }
             // Add deserialization for other components as needed

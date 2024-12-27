@@ -335,9 +335,6 @@ void RenderWindow::RenderSceneToFBO()
 
         std::shared_ptr<MeshComponent> mesh = obj->GetComponent<MeshComponent>();
 
-        if (!transform) {
-            DEBUG_PRINT("Could not find Transform Component");
-        }
 
 
         if (transform && mesh)
@@ -345,7 +342,7 @@ void RenderWindow::RenderSceneToFBO()
             
             // Translate
 
-            g_GPU_Triangles_drawn_to_screen = static_cast<int>(mesh->indexCount);
+            g_GPU_Triangles_drawn_to_screen += static_cast<int>(mesh->indexCount);
 
             model = glm::translate(model, transform->position);
 
