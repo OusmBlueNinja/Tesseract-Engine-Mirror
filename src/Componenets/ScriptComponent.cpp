@@ -3,6 +3,8 @@
 #include "ScriptComponent.h"
 #include <iostream>
 
+#include "gcml.h"
+
 // External pointer to LoggerWindow (Assuming it's defined globally)
 extern LoggerWindow* g_LoggerWindow;
 
@@ -47,7 +49,10 @@ void ScriptComponent::Deserialize(const YAML::Node& node)
     if (node["ScriptPath"])
     {
         ScriptPath = node["ScriptPath"].as<std::string>();
-    }
+    } 
+    
+    DEBUG_PRINT("Script Path: %s", ScriptPath.c_str());
+
     Initialize();
 
 }
