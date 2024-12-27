@@ -22,7 +22,9 @@ public:
 
 private:
     lua_State* L;
-        std::string m_LastErrorMessage; // Stores the last error message
+    std::string m_LastErrorMessage; // Stores the last error message
+
+    bool m_firstCall;
 
 
     // Helper function to call a Lua function with no arguments and no return values

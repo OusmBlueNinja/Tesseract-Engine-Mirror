@@ -16,16 +16,19 @@ end
 
 
 function OnUpdate(deltaTime)
-
+    
     ticks = ticks + 1
 
-
-    if itterator >= 1 then
-        Engine.Log("TPS: ".. ticks)
+    local timestep = 5
+    if itterator >= timestep then
+        Engine.Log("TPS: ".. (ticks/timestep))
         ticks = 0
         itterator = 0
     end
+
+    
     itterator = itterator + deltaTime
+    
 end
 
 

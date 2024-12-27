@@ -18,7 +18,7 @@ int lua_log_message(lua_State *L);
 
 
 
-LuaManager::LuaManager() : L(nullptr) {}
+LuaManager::LuaManager() : L(nullptr), m_firstCall(false) {}
 
 LuaManager::~LuaManager()
 {
@@ -55,7 +55,7 @@ bool LuaManager::init(const std::string &scriptPath)
         L = nullptr;
         return false;
     }
-
+    callLuaFunction("OnInit");
 
     return true;
 }
@@ -96,6 +96,8 @@ bool LuaManager::onUpdate(float deltaTime)
     // Push the deltaTime argument
     lua_pushnumber(L, deltaTime);
 
+    m_firstCall = true;
+
     // Call the function with 1 argument and 0 return values
     if (lua_pcall(L, 1, 0, 0) != LUA_OK)
     {
@@ -135,7 +137,9 @@ bool LuaManager::onUpdate(float deltaTime)
 
 
         lua_pop(L, 1); // Remove error message
+
         return false;
+
     }
     else
     {

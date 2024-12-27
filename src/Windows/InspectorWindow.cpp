@@ -9,6 +9,9 @@
 extern std::vector<GameObject> g_GameObjects;
 extern GameObject *g_SelectedObject; // Pointer to the currently selected object
 
+extern LoggerWindow *g_LoggerWindow;
+
+
 void InspectorWindow::Show()
 {
     // Increase window/item spacing for a cleaner look
@@ -74,11 +77,10 @@ void InspectorWindow::Show()
             // ===========================
             // 1) TRANSFORM
             // ===========================
-            
+
             std::shared_ptr<TransformComponent> transform = g_SelectedObject->GetComponent<TransformComponent>();
             std::shared_ptr<MeshComponent> mesh = g_SelectedObject->GetComponent<MeshComponent>();
             std::shared_ptr<ScriptComponent> script = g_SelectedObject->GetComponent<ScriptComponent>();
-
 
             // Color the Transform header
 
@@ -293,7 +295,7 @@ void InspectorWindow::Show()
                 }
             }
 
-            if (mesh && g_SelectedObject) 
+            if (mesh && g_SelectedObject)
             {
 
                 // Transform* transform = &g_SelectedObject->transform;
@@ -350,7 +352,6 @@ void InspectorWindow::Show()
                 bool scriptOpen = ImGui::CollapsingHeader("Script##Main", ImGuiTreeNodeFlags_DefaultOpen);
                 ImGui::PopStyleColor();
 
-
                 // printf("%p\n", &transform);
                 if (scriptOpen)
                 {
@@ -367,6 +368,11 @@ void InspectorWindow::Show()
                         script->ScriptPath = buffer;
                     }
 
+                    if (ImGui::Button("Reload Script"))
+                    {   
+                        script->Initialize();
+                        g_LoggerWindow->AddLog("Reloaded Script: %s", ImVec4(0.0f,1.0f,0.0f,1.0f), script->ScriptPath.c_str());
+                    }
                 }
             }
 
