@@ -6,7 +6,8 @@ A 3D Game engine for Small to Medium-sized games with a LUA Scripting interface.
 
 ### Note: These screenshots are sorted by version.
 
-
+#### 0.0.45
+![](./assets/images/SS-Dev1_4.png)
 
 #### 0.0.37
 ![](./assets/images/SS-Dev1_3.png)
