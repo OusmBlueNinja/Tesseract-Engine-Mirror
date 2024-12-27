@@ -106,7 +106,6 @@ public:
         // 4) Store in cache
         m_AssetMap[key] = assetData;
 
-        DEBUG_PRINT("[AssetManager] Loaded Asset: %s", path.c_str());
 
         // 5) Return the loaded asset
         return std::get<T>(assetData);

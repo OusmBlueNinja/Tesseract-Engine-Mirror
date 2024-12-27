@@ -43,25 +43,12 @@ YAML::Node MeshComponent::Serialize()
 
 void MeshComponent::Deserialize(const YAML::Node &node)
 {
-    if (node["vao"])
-    {
-        vao = static_cast<int>(node["vao"].as<int>());
-    }
-    if (node["indexCount"])
-    {
-        indexCount = static_cast<int>(node["indexCount"].as<int>());
-    }
-    if (node["textureID"])
-    {
-        textureID = static_cast<int>(node["textureID"].as<int>());
-    }
 
     if (node["MeshPath"])
     {
         MeshPath = static_cast<std::string>(node["MeshPath"].as<std::string>());
-        // g_AssetManager.DebugAssetMap();
 
-#if 1
+                // g_AssetManager.DebugAssetMap();
 
         DEBUG_PRINT("Loading Mesh: %s", MeshPath.c_str());
 
@@ -72,19 +59,42 @@ void MeshComponent::Deserialize(const YAML::Node &node)
         {
             vao = model->vao;
         }
+        else if (node["vao"])
+        {
+            vao = static_cast<int>(node["vao"].as<int>());
+        }
         if (model->indices.size() != 0)
         {
             indexCount = model->indices.size();
         }
+        else if (node["indexCount"])
+        {
+            indexCount = static_cast<int>(node["indexCount"].as<int>());
+        }
         if (textureID != 0)
         {
+
             textureID = model->textureID;
         }
+        else if (node["textureID"])
+        {
+            textureID = static_cast<int>(node["textureID"].as<int>());
+        }
+    }
+    else
+    {
 
-#else
-
-        DEBUG_PRINT("Automatic Mesh Loading Disabled.");
-
-#endif
+        if (node["vao"])
+        {
+            vao = static_cast<int>(node["vao"].as<int>());
+        }
+        if (node["indexCount"])
+        {
+            indexCount = static_cast<int>(node["indexCount"].as<int>());
+        }
+        if (node["textureID"])
+        {
+            textureID = static_cast<int>(node["textureID"].as<int>());
+        }
     }
 }
