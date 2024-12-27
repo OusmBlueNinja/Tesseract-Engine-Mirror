@@ -74,7 +74,6 @@ void SceneWindow::Show()
             if (ImGui::IsItemClicked(ImGuiMouseButton_Left))
             {
                 g_SelectedObject = obj;
-                std::cout << "Selected GameObject: " << obj->name << " with ID: " << obj->id << std::endl;
             }
 
             // Right-click context menu for GameObject actions
@@ -83,10 +82,8 @@ void SceneWindow::Show()
                 // Delete GameObject Option
                 if (ImGui::MenuItem("Remove"))
                 {
-                    std::cout << "Attempting to remove GameObject: " << obj->name << " with ID: " << obj->id << std::endl;
 
                     RemoveGameObject(static_cast<int>(i));
-                    std::cout << "Removed GameObject: " << obj->name << std::endl;
 
                     ImGui::EndPopup();
                     // Since we've erased the current entity, adjust the loop accordingly
@@ -135,7 +132,6 @@ void SceneWindow::AddGameObject()
     // Modify the name to ensure uniqueness
     newObj->name += " " + std::to_string(g_GameObjects.size());
     g_GameObjects.push_back(newObj);
-    std::cout << "Added GameObject: " << newObj->name << " with ID: " << newObj->id << std::endl;
 }
 
 // RemoveGameObject: Removes a GameObject by index
@@ -147,15 +143,13 @@ void SceneWindow::RemoveGameObject(int index)
         if (g_SelectedObject == g_GameObjects[index])
         {
             g_SelectedObject = nullptr;
-            std::cout << "Cleared selection as the selected GameObject was removed." << std::endl;
         }
 
-        std::cout << "Removing GameObject: " << g_GameObjects[index]->name << " with ID: " << g_GameObjects[index]->id << std::endl;
         g_GameObjects.erase(g_GameObjects.begin() + index);
     }
     else
     {
-        std::cerr << "Attempted to remove GameObject with invalid index: " << index << std::endl;
+        DEBUG_PRINT("Attempted to remove GameObject with invalid index: %d", index );
     }
 }
 

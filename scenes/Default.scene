@@ -2,11 +2,22 @@ Entities:
   - ID: 0
     Name: Default
     Components:
-      Mesh:
-        vao: 1
-        indexCount: 36
-        textureID: 1
       Transform:
-        Position: [0, 0, 0]
-        Rotation: [0, 0.5, 0]
+        Position: [0, 1.39999998, 0]
+        Rotation: [-180, -115.599998, 0]
         Scale: [1, 1, 1]
+      Mesh:
+        vao: 2
+        indexCount: 15810
+        textureID: 1
+  - ID: 1
+    Name: Car
+    Components:
+      Transform:
+        Position: [0, 1.39999998, 0]
+        Rotation: [-180, -115.599998, 0]
+        Scale: [0.99000001, 0.99000001, 0.99000001]
+      Mesh:
+        vao: 2
+        indexCount: 15810
+        textureID: 3

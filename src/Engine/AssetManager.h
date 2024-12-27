@@ -23,6 +23,7 @@ struct GenericAsset
     void* data = nullptr;
 };
 
+
 struct Vertex {
     float position[3];
     float texCoord[2];

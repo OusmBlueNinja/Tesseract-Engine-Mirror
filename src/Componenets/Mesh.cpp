@@ -1,6 +1,10 @@
 
 #include "Mesh.h"
 
+//TODO: Make this have a OBJ path, make indexCount derive from AssetManager
+//TODO: and make texture id also get from AssetManager
+//?     Procastinate
+
 const std::string MeshComponent::name = "Mesh";
 
 MeshComponent::MeshComponent()
