@@ -11,6 +11,8 @@
 #include <GLFW/glfw3.h>
 #include <string>
 
+
+
 // Dear ImGui
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
@@ -23,6 +25,8 @@
 #include "Windows/SceneWindow.h"
 
 #include "Engine/ThemeManager.h"
+#include "Engine/SceneManager.h"
+
 
 // #define YAML_CPP_STATIC_DEFINE
 #include <yaml-cpp/yaml.h>
@@ -36,7 +40,6 @@ LoggerWindow *g_LoggerWindow;
 std::vector<std::shared_ptr<GameObject>> g_GameObjects;
 
 int g_GPU_Triangles_drawn_to_screen = 0;
-
 
 GameObject *g_SelectedObject; // Pointer to the currently selected object
 
@@ -313,7 +316,19 @@ void MyEngine::ShowDockSpace()
         if (ImGui::BeginMenu("File"))
         {
             if (ImGui::MenuItem("Exit"))
+            {
                 m_Running = false; // Stop the engine
+            }
+            if (ImGui::MenuItem("Save"))
+            {
+                m_LoggerWindow->AddLog("Saveing Scene");
+
+            }
+            if (ImGui::MenuItem("Load"))
+            {
+                m_LoggerWindow->AddLog("Loading Scene");
+                
+            }
             ImGui::EndMenu();
         }
         ImGui::EndMenuBar();
