@@ -19,13 +19,55 @@ void InspectorWindow::Show()
     if (ImGui::Begin("Inspector"))
     {
         // Title label (white text)
-        const char *objectName = "No Object Selected";
         if (g_SelectedObject)
         {
-            objectName = g_SelectedObject->name.c_str();
-            ImGui::Text("Editing Object: %s", objectName);
+
+            if (g_SelectedObject == nullptr)
+            {
+                ImGui::Text("No object selected.");
+                return;
+            }
+
+            // Display object name and component count
+            ImGui::Text("Editing Object: %s", g_SelectedObject->name.c_str());
             ImGui::Text("Components: %d", g_SelectedObject->GetComponentCount());
 
+            ImGui::Spacing();
+            ImGui::Separator();
+            ImGui::Spacing();
+
+            // Begin two-column layout for labels and inputs
+            ImGui::Columns(2, "InspectorColumns", true); // 2 columns, ID "InspectorColumns", border=true
+            ImGui::SetColumnWidth(0, 100.0f);            // Optional: Set fixed width for the first column
+
+            // Label in the first column
+            ImGui::Text("Tag:");
+            ImGui::NextColumn(); // Move to the second column
+
+            // Define buffer size
+            const size_t BUFFER_SIZE = 256;
+
+            // Allocate buffer and copy the current string
+            char buffer[BUFFER_SIZE];
+            std::strncpy(buffer, g_SelectedObject->name.c_str(), BUFFER_SIZE - 1);
+            buffer[BUFFER_SIZE - 1] = '\0'; // Ensure null-termination
+
+            // Unique identifier for the InputText to prevent ImGui state conflicts
+            const char *inputLabel = "##TagInput";
+
+            // Render InputText widget
+            if (ImGui::InputText(inputLabel, buffer, BUFFER_SIZE))
+            {
+                // Update the GameObject's name if modified
+                g_SelectedObject->name = buffer;
+            }
+
+            ImGui::NextColumn(); // Move back to the first column (if adding more fields)
+
+            // End columns
+            ImGui::Columns(1);
+
+            ImGui::Spacing();
             ImGui::Separator();
             ImGui::Spacing();
 
@@ -36,9 +78,7 @@ void InspectorWindow::Show()
             std::shared_ptr<TransformComponent> transform = g_SelectedObject->GetComponent<TransformComponent>();
             std::shared_ptr<MeshComponent> mesh = g_SelectedObject->GetComponent<MeshComponent>();
 
-
             // Color the Transform header
-            
 
             if (transform && g_SelectedObject) //! Funny: I did not put a null check here and it broke everything.
             {
@@ -251,8 +291,6 @@ void InspectorWindow::Show()
                 }
             }
 
-            
-
             if (mesh && g_SelectedObject) //! Funny: I did not put a null check here and it broke everything.
             {
 
@@ -324,7 +362,7 @@ void InspectorWindow::Show()
         }
         ImGui::End();
 
-        } //
+    } //
 
     // Restore style
     ImGui::PopStyleVar(3);

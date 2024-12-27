@@ -9,6 +9,11 @@
 extern int LoaddedAssets;
 extern int g_GPU_Triangles_drawn_to_screen;
 
+const char* polygonModeOptions[] = { "Fill", "Wireframe", "Points" };
+const int numPolygonModes = sizeof(polygonModeOptions) / sizeof(polygonModeOptions[0]);
+
+int polygonMode = 0;
+
 // Initialize static members
 int PerformanceWindow::m_OpenGLCallCount = 0;
 int PerformanceWindow::m_TriangleCount = 0;
@@ -180,6 +185,24 @@ void PerformanceWindow::Show(float fps, float ms)
                 ImGui::SetItemDefaultFocus();
         }
         ImGui::EndCombo();
+    }
+    if (ImGui::Combo("Polygon Mode", &polygonMode, polygonModeOptions, numPolygonModes))
+    {
+        switch (polygonMode)
+        {
+        case 0:
+            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+            break;
+        case 1:
+            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+            break;
+        case 2:
+            glPolygonMode(GL_FRONT_AND_BACK, GL_POINT);
+            break;
+        default:
+            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+            break;
+        }
     }
 
     ImGui::End();
