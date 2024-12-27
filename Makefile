@@ -2,7 +2,7 @@
 
 # Compiler and Flags
 CXX := g++
-CXXFLAGS := -Wall -Wextra -std=c++17 -g
+CXXFLAGS := -Wall -Wextra -std=c++17 -g -DDEBUG
 
 # Directories
 SRC_DIR := src
@@ -11,7 +11,7 @@ BUILD_DIR := build
 
 # Include Directories
 GLFW_INCLUDE := C:/libraries/glfw/include
-INCLUDE_DIRS := $(SRC_DIR) $(VENDOR_DIRS) $(GLFW_INCLUDE) vendor/stb/include
+INCLUDE_DIRS := $(SRC_DIR) $(VENDOR_DIRS) $(GLFW_INCLUDE) vendor/stb/include C:\msys64\mingw64\include
 INCLUDE_DIRS := $(SRC_DIR) $(VENDOR_DIRS) $(GLFW_INCLUDE) vendor/gcml
 INCLUDES := $(addprefix -I, $(INCLUDE_DIRS))
 
@@ -43,7 +43,7 @@ OBJ_FILES := $(patsubst %.cpp, $(BUILD_DIR)/%.o, $(ALL_SRC))
 TARGET := TesseractEngine.exe
 
 # Libraries
-LIBS := -LC:/libraries/glfw/lib -lglfw3 -lopengl32 -lgdi32 -limm32 -lole32 -loleaut32 -luuid -lwinmm -lglew32 -lglu32
+LIBS := -LC:/libraries/glfw/lib -lglfw3 -lopengl32 -lgdi32 -limm32 -lole32 -loleaut32 -luuid -lwinmm -lglew32 -lglu32 -lyaml-cpp 
 
 # Phony Targets
 .PHONY: all clean copy_assets

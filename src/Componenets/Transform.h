@@ -1,14 +1,25 @@
 // Transform.h
 #pragma once
+
+#include "Component.h"
 #include <glm/glm.hpp>
+#include <yaml-cpp/yaml.h>
 
-// A simple transform with position, rotation, scale
-struct Transform
+class TransformComponent : public Component
 {
-    glm::vec3 position {0.f, 0.f, 0.f};
-    glm::vec3 rotation {0.f, 0.f, 0.f}; // Euler angles, in degrees or radians
-    glm::vec3 scale    {1.f, 1.f, 1.f};
+public:
+    glm::vec3 position;
+    glm::vec3 rotation;
+    glm::vec3 scale;
+
+    TransformComponent();
+    virtual const std::string& GetName() const override;
+    static const std::string& GetStaticName();
+
+    // Serialization methods
+    virtual YAML::Node Serialize() override;
+    virtual void Deserialize(const YAML::Node& node) override;
+
+private:
+    static const std::string name;
 };
-
-
-

@@ -18,7 +18,7 @@
 #include "TestModel.h"
 
 
-//#define DEBUG
+
 #include "gcml.h"
 
 // Forward declaration to avoid including GLFW in the header if you prefer

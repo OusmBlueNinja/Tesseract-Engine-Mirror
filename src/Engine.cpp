@@ -1,7 +1,5 @@
 // src/Engine.cpp
 
-
-
 // Settings
 
 #define VSync 1
@@ -11,6 +9,7 @@
 #include <chrono>
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
+#include <string>
 
 // Dear ImGui
 #include "imgui.h"
@@ -23,36 +22,25 @@
 #include "Windows/InspectorWindow.h"
 #include "Windows/SceneWindow.h"
 
-
 #include "Engine/ThemeManager.h"
 
-
-#define YAML_CPP_STATIC_DEFINE
+// #define YAML_CPP_STATIC_DEFINE
 #include <yaml-cpp/yaml.h>
 
-
-
 #include "TestModel.h"
-
-
-
-
-
-
-
 
 AssetManager g_AssetManager;
 
 LoggerWindow *g_LoggerWindow;
 
-std::vector<GameObject> g_GameObjects;
+std::vector<std::shared_ptr<GameObject>> g_GameObjects;
 
-GameObject* g_SelectedObject;          // Pointer to the currently selected object
-
-
+int g_GPU_Triangles_drawn_to_screen = 0;
 
 
-bool MyEngine::Init(int width, int height, const std::string& title)
+GameObject *g_SelectedObject; // Pointer to the currently selected object
+
+bool MyEngine::Init(int width, int height, const std::string &title)
 {
     DEBUG_PRINT("[START] Engine Init");
     // ------------------------------------------
@@ -94,7 +82,7 @@ bool MyEngine::Init(int width, int height, const std::string& title)
     // ------------------------------------------
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
-    ImGuiIO& io = ImGui::GetIO();
+    ImGuiIO &io = ImGui::GetIO();
     (void)io;
     // Enable docking
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
@@ -104,18 +92,16 @@ bool MyEngine::Init(int width, int height, const std::string& title)
     // Style
     ImGui::StyleColorsDark();
 
-
     // Platform/Renderer bindings
     ImGui_ImplGlfw_InitForOpenGL(m_Window, true);
     ImGui_ImplOpenGL3_Init("#version 330");
 
     // Initialize windows
-    m_RenderWindow      = std::make_unique<RenderWindow>();
+    m_RenderWindow = std::make_unique<RenderWindow>();
     m_PerformanceWindow = std::make_unique<PerformanceWindow>();
-    m_LoggerWindow      = std::make_unique<LoggerWindow>();
-    m_InspectorWindow   = std::make_unique<InspectorWindow>();
-    m_SceneWindow       = std::make_unique<SceneWindow>();
-    
+    m_LoggerWindow = std::make_unique<LoggerWindow>();
+    m_InspectorWindow = std::make_unique<InspectorWindow>();
+    m_SceneWindow = std::make_unique<SceneWindow>();
 
     // Some initial logs
     m_LoggerWindow->AddLog("Engine initialized.");
@@ -130,36 +116,70 @@ bool MyEngine::Init(int width, int height, const std::string& title)
     return true;
 }
 
-
 void MyEngine::Run()
 {
     DEBUG_PRINT("[START] Engine Run ");
 
+    DEBUG_PRINT("Transition to Editor");
 
     // Pseudocode:
-    GameObject cube;
+    int newId = g_GameObjects.size();
+    auto newGameObject = std::make_shared<GameObject>(newId, ("Default"));
 
-    cube.name = std::string("Default");
-    cube.transform.position = glm::vec3(0.f, 0.f, 0.f);
-    cube.transform.rotation = glm::vec3(0.f, 0.5f, 0.f);
-    cube.transform.scale    = glm::vec3(1.f, 1.f, 1.f);
+    DEBUG_PRINT("Created Default GameObject");
 
-    // Suppose we loaded a VAO, an EBO with 36 indices for the cube, 
+    newGameObject->AddComponent(std::make_shared<TransformComponent>());
+    newGameObject->AddComponent(std::make_shared<MeshComponent>());
+
+    DEBUG_PRINT("Added Componenets");
+
+    // Suppose we loaded a VAO, an EBO with 36 indices for the cube,
     // and a texture ID from the asset manager
-    cube.mesh.vao         = CreateCubeVAO();
-    cube.mesh.indexCount  = 36; 
-    cube.mesh.textureID   = static_cast<GLuint>(reinterpret_cast<uintptr_t>(g_AssetManager.loadAsset(AssetType::TEXTURE, "assets/textures/wood.png")));
+    auto mesh = newGameObject->GetComponent<MeshComponent>();
+    auto transform = newGameObject->GetComponent<TransformComponent>();
 
-    g_GameObjects.push_back(cube);
+    DEBUG_PRINT("Got pointers to Componenets");
 
-    //printf("%p\n", &g_GameObjects);
+    if (mesh)
+    {
+        // printf("Got Valid Mesh Component\n");
+        mesh->vao = CreateCubeVAO();
+        mesh->indexCount = 36;
+        mesh->textureID = static_cast<GLuint>(reinterpret_cast<uintptr_t>(g_AssetManager.loadAsset(AssetType::TEXTURE, "assets/textures/wood.png")));
+    }
+    else
+    {
+
+        DEBUG_PRINT("Could not find Mesh Component\n");
+    }
+
+    if (transform)
+    {
+        // printf("Got Valid Transform Component\n");
+        transform->position = glm::vec3(0.f, 0.f, 0.f);
+        transform->rotation = glm::vec3(0.f, 0.5f, 0.f);
+        transform->scale = glm::vec3(1.f, 1.f, 1.f);
+    }
+    else
+    {
+
+        DEBUG_PRINT("Could not find Transform Component");
+    }
+
+    g_AssetManager.loadAsset(AssetType::TEXTURE, "assets/textures/bricks.png");
+    g_AssetManager.loadAsset(AssetType::TEXTURE, "assets/textures/default.png");
+    g_AssetManager.loadAsset(AssetType::TEXTURE, "assets/textures/lush_grass.png");
+
+    g_GameObjects.push_back(newGameObject);
+    DEBUG_PRINT("Put componenent into Global Componenets Subsystem");
+
+    // printf("%p\n", &g_GameObjects);
 
     // Possibly create more GameObjects with different positions or textures
 
-
     ThemeManager_ChangeTheme(2);
+    DEBUG_PRINT("Changed Theme to default");
 
-    
     while (!glfwWindowShouldClose(m_Window) && m_Running)
     {
         // Poll
@@ -172,7 +192,7 @@ void MyEngine::Run()
         if (delta >= 0.1)
         {
             m_Fps = (float)(m_FrameCount / delta);
-            m_Ms  = 100.0f / m_Fps;
+            m_Ms = 100.0f / m_Fps;
             m_FrameCount = 0;
             m_LastTime = current_time;
         }
@@ -183,31 +203,31 @@ void MyEngine::Run()
         // Show main DockSpace
         ShowDockSpace();
 
-        
         m_InspectorWindow->Show();
 
         // Show our windows
-        m_RenderWindow->Show();                    // The spinning triangle as ImGui::Image
-        m_PerformanceWindow->Show(m_Fps, m_Ms);    // FPS & ms
-        m_LoggerWindow->Show();                    // Logs
+        m_RenderWindow->Show(); // The spinning triangle as ImGui::Image
+
+        m_PerformanceWindow->Show(m_Fps, m_Ms); // FPS & ms
+
+        m_LoggerWindow->Show(); // Logs
 
         m_SceneWindow->Show();
 
         // After rendering
-        m_PerformanceWindow->UpdatePerformanceStats(-1, -1);
 
+        m_PerformanceWindow->UpdatePerformanceStats(-1, g_GPU_Triangles_drawn_to_screen);
 
         // End frame
         EndFrame();
     }
     DEBUG_PRINT("[OK] Engine Run ");
-
 }
 
 void MyEngine::Cleanup()
 {
     DEBUG_PRINT("[START] Engine Cleanup ");
-    
+
     // ImGui cleanup
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
@@ -223,7 +243,6 @@ void MyEngine::Cleanup()
 
     m_Running = false;
     DEBUG_PRINT("[OK] Engine Cleanup ");
-
 }
 
 void MyEngine::BeginFrame()
@@ -250,10 +269,10 @@ void MyEngine::EndFrame()
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
     // (Optional) handle multi-viewport
-    ImGuiIO& io = ImGui::GetIO();
+    ImGuiIO &io = ImGui::GetIO();
     if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
     {
-        GLFWwindow* backup_current_context = glfwGetCurrentContext();
+        GLFWwindow *backup_current_context = glfwGetCurrentContext();
         ImGui::UpdatePlatformWindows();
         ImGui::RenderPlatformWindowsDefault();
         glfwMakeContextCurrent(backup_current_context);
@@ -267,31 +286,28 @@ void MyEngine::ShowDockSpace()
 {
     static bool dockspaceOpen = true;
     static bool opt_fullscreen = true;
-    static ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_None;
+    // Initialize dockspace_flags without ImGuiDockNodeFlags_DockSpace
+    static ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_PassthruCentralNode;
 
     ImGuiWindowFlags window_flags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking;
     if (opt_fullscreen)
     {
-        ImGuiViewport* viewport = ImGui::GetMainViewport();
+        ImGuiViewport *viewport = ImGui::GetMainViewport();
         ImGui::SetNextWindowPos(viewport->WorkPos);
         ImGui::SetNextWindowSize(viewport->WorkSize);
         ImGui::SetNextWindowViewport(viewport->ID);
-        window_flags |= ImGuiWindowFlags_NoTitleBar
-                      | ImGuiWindowFlags_NoCollapse
-                      | ImGuiWindowFlags_NoResize
-                      | ImGuiWindowFlags_NoMove;
-        window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus
-                      | ImGuiWindowFlags_NoNavFocus;
+        window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove;
+        window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
     }
 
-    // Style
+    // Style adjustments
     ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
     ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
 
     ImGui::Begin("DockSpace", &dockspaceOpen, window_flags);
     ImGui::PopStyleVar(2);
 
-    // Menu bar example
+    // Menu bar
     if (ImGui::BeginMenuBar())
     {
         if (ImGui::BeginMenu("File"))
@@ -304,9 +320,12 @@ void MyEngine::ShowDockSpace()
     }
 
     // DockSpace
-    ImGuiIO& io = ImGui::GetIO();
+    ImGuiIO &io = ImGui::GetIO();
     if (io.ConfigFlags & ImGuiConfigFlags_DockingEnable)
     {
+        // Optional: Log the flags for debugging
+        // DEBUG_PRINT("DockSpace Flags: %d", dockspace_flags);
+
         ImGuiID dockspace_id = ImGui::GetID("MyDockSpace");
         ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
     }

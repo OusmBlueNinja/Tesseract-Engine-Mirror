@@ -1,7 +1,7 @@
 #pragma once
 
 #include <string>
-//#include <yaml-cpp/yaml.h>
+#include <yaml-cpp/yaml.h>
 
 class Component
 {
@@ -11,6 +11,6 @@ public:
 
     
     // Serialization methods
-    //virtual YAML::Node Serialize() = 0;
-    //virtual void Deserialize(const YAML::Node& node) = 0;
+    virtual YAML::Node Serialize() = 0;
+    virtual void Deserialize(const YAML::Node& node) = 0;
 };

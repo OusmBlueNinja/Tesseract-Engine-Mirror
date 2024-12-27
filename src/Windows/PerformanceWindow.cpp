@@ -7,6 +7,7 @@
 
 
 extern int LoaddedAssets;
+extern int g_GPU_Triangles_drawn_to_screen;
 
 // Initialize static members
 int PerformanceWindow::m_OpenGLCallCount = 0;
@@ -41,6 +42,9 @@ void PerformanceWindow::UpdatePerformanceStats(int newCallCount, int newTriangle
 {
     m_OpenGLCallCount = newCallCount;
     m_TriangleCount = newTriangleCount;
+
+    g_GPU_Triangles_drawn_to_screen = 0;
+
 }
 
 void PerformanceWindow::Show(float fps, float ms)
@@ -138,14 +142,14 @@ void PerformanceWindow::Show(float fps, float ms)
                      300.0f,
                      ImVec2(0, 50));
 
-    ImGui::Text("Triangles: %d", m_TriangleCount);
-    ImGui::PlotHistogram("Triangles",
+    ImGui::Text("Indices: %d", m_TriangleCount);
+    ImGui::PlotHistogram("Indices",
                          s_TriangleHistory,
                          IM_ARRAYSIZE(s_TriangleHistory),
                          0,
                          nullptr,
                          0.0f,
-                         5000.0f,
+                         m_TriangleCount*2.5,
                          ImVec2(0, 50));
 
     ImGui::Separator();

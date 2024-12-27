@@ -10,7 +10,7 @@
 class SceneWindow {
 public:
     void Show();
-    GameObject* GetSelectedObject() const;
+    std::shared_ptr<GameObject> GetSelectedObject() const;
 
 private:
     void AddGameObject();      // Adds a new game object
