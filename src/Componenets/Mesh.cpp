@@ -6,7 +6,7 @@
 #include "../Engine/AssetManager.h"
 
 
-extern AssetManager *g_AssetManager;
+extern AssetManager g_AssetManager;
 
 //TODO: Make this have a OBJ path, make indexCount derive from AssetManager
 //TODO: and make texture id also get from AssetManager
@@ -67,13 +67,13 @@ void MeshComponent::Deserialize(const YAML::Node& node)
     if (node["MeshPath"])
     {
         MeshPath = static_cast<std::string>(node["MeshPath"].as<std::string>());
-        g_AssetManager->DebugAssetMap();
+        g_AssetManager.DebugAssetMap();
 
-        #if 0
+        #if 1
 
         DEBUG_PRINT("Loading Mesh: >%s<", MeshPath.c_str());
 
-        Model* model = g_AssetManager->loadAsset<Model*>(AssetType::MODEL, MeshPath.c_str());
+        Model* model = g_AssetManager.loadAsset<Model*>(AssetType::MODEL, MeshPath.c_str());
         DEBUG_PRINT("Model loaded successfully with %lld vertices and %lld indices.", model->vertices.size(),  model->indices.size());
         
         #else
