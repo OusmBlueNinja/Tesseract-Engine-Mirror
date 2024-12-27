@@ -1,0 +1,12 @@
+# Material File for Cube with Sky Map Texture
+
+newmtl SkyMapMaterial
+Ka 1.000 1.000 1.000        # Ambient color
+Kd 1.000 1.000 1.000        # Diffuse color
+Ks 0.000 0.000 0.000        # Specular color
+d 1.0                        # Transparency
+Ns 0                         # Shininess
+illum 2                      # Illumination model
+
+# Texture Map
+map_Kd skymap.png   # Replace with your sky map texture file name

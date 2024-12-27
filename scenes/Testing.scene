@@ -8,9 +8,9 @@ Entities:
         Scale: [1, 1, 1]
       Mesh:
         vao: 2
-        indexCount: 200000
+        indexCount: 15810
         textureID: 1
-        MeshPath: assets/models/DefaultMesh.obj
+        MeshPath: assets/models/LowPolyFiatUNO.obj
   - ID: 1
     Name: Cube Yay
     Components:
@@ -19,7 +19,7 @@ Entities:
         Rotation: [-9, -18.6000004, -28.1000004]
         Scale: [1, 1, 1]
       Mesh:
-        vao: 1
+        vao: 5
         indexCount: 36
         textureID: 2
         MeshPath: assets/models/DefaultMesh.obj
@@ -31,7 +31,7 @@ Entities:
         Rotation: [-86.3000031, 0, -66]
         Scale: [1, 1, 1]
       Mesh:
-        vao: 1
+        vao: 5
         indexCount: 36
         textureID: 3
         MeshPath: assets/models/DefaultMesh.obj
@@ -43,7 +43,7 @@ Entities:
         Rotation: [-23.5, 15.8999996, -59.9000015]
         Scale: [1, 1, 1]
       Mesh:
-        vao: 1
+        vao: 5
         indexCount: 36
         textureID: 4
         MeshPath: assets/models/DefaultMesh.obj
@@ -55,7 +55,7 @@ Entities:
         Rotation: [-17.2999992, -16.1000004, -19.2999992]
         Scale: [1, 1, 1]
       Mesh:
-        vao: 1
+        vao: 5
         indexCount: 36
         textureID: 5
         MeshPath: assets/models/DefaultMesh.obj
@@ -63,14 +63,14 @@ Entities:
     Name: Colormap
     Components:
       Mesh:
-        vao: 1
+        vao: 5
         indexCount: 36
         textureID: 6
         MeshPath: assets/models/DefaultMesh.obj
       Transform:
-        Position: [-6.80000019, 2.70000005, -13.8000002]
-        Rotation: [-39.7000008, 0, -33.2000008]
-        Scale: [1, 1, 1]
+        Position: [0, 0, 0]
+        Rotation: [0, 0, -90]
+        Scale: [100, 100, 100]
   - ID: 6
     Name: Cube Yay 6
     Components:
@@ -79,7 +79,7 @@ Entities:
         Rotation: [15.8000002, -18.2000008, -11.1000004]
         Scale: [1, 1, 1]
       Mesh:
-        vao: 1
+        vao: 5
         indexCount: 36
         textureID: 3
         MeshPath: assets/models/DefaultMesh.obj
@@ -91,7 +91,7 @@ Entities:
         Rotation: [-16.1000004, -15.8999996, -35]
         Scale: [1, 1, 1]
       Mesh:
-        vao: 1
+        vao: 5
         indexCount: 36
         textureID: 4
         MeshPath: assets/models/DefaultMesh.obj
@@ -100,10 +100,10 @@ Entities:
     Components:
       Transform:
         Position: [-7.80000019, 0.200000003, -29.7999992]
-        Rotation: [22.5, -32.7999992, 0]
+        Rotation: [22.2999992, -32.7999992, 0]
         Scale: [1, 1, 1]
       Mesh:
-        vao: 1
+        vao: 5
         indexCount: 36
         textureID: 1
         MeshPath: assets/models/DefaultMesh.obj
@@ -115,7 +115,7 @@ Entities:
         Rotation: [-41.4000015, -22.6000004, -52.2999992]
         Scale: [1, 1, 1]
       Mesh:
-        vao: 1
+        vao: 5
         indexCount: 36
         textureID: 2
         MeshPath: assets/models/DefaultMesh.obj
