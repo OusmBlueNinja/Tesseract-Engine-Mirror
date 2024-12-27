@@ -2,66 +2,110 @@ Entities:
   - ID: 0
     Name: Default
     Components:
-      Transform:
-        Position: [0, 2.79999995, -12.6000004]
-        Rotation: [0, 0.5, -20.6000004]
-        Scale: [1, 1, 1]
       Mesh:
         vao: 1
         indexCount: 36
         textureID: 1
-  - ID: 1
-    Name: New GameObject 1
-    Components:
       Transform:
-        Position: [-11.8999996, -2, -21.7999992]
-        Rotation: [-9, -18.6000004, -28.1000004]
+        Position: [0, 2.79999995, -12.6000004]
+        Rotation: [0, 0.5, -20.6000004]
         Scale: [1, 1, 1]
+  - ID: 1
+    Name: Cube Yay
+    Components:
       Mesh:
         vao: 1
         indexCount: 36
         textureID: 2
-  - ID: 2
-    Name: New GameObject 2
-    Components:
       Transform:
-        Position: [7.80000019, -8.10000038, -20.6000004]
-        Rotation: [-86.3000031, 0, -66]
+        Position: [-11.8999996, -2, -21.7999992]
+        Rotation: [-9, -18.6000004, -28.1000004]
         Scale: [1, 1, 1]
+  - ID: 2
+    Name: Cube Yay
+    Components:
       Mesh:
         vao: 1
         indexCount: 36
         textureID: 3
-  - ID: 3
-    Name: New GameObject 3
-    Components:
       Transform:
-        Position: [-1.20000005, -3.4000001, -17.7000008]
-        Rotation: [-23.5, 15.8999996, -59.9000015]
+        Position: [7.80000019, -8.10000038, -20.6000004]
+        Rotation: [-86.3000031, 0, -66]
         Scale: [1, 1, 1]
+  - ID: 3
+    Name: Cube Yay
+    Components:
       Mesh:
         vao: 1
         indexCount: 36
         textureID: 4
-  - ID: 4
-    Name: New GameObject 4
-    Components:
       Transform:
-        Position: [8.10000038, 0.800000012, -12]
-        Rotation: [-17.2999992, -16.1000004, -19.2999992]
+        Position: [-1.20000005, -3.4000001, -17.7000008]
+        Rotation: [-23.5, 15.8999996, -59.9000015]
         Scale: [1, 1, 1]
+  - ID: 4
+    Name: Cube Yay
+    Components:
       Mesh:
         vao: 1
         indexCount: 36
         textureID: 5
+      Transform:
+        Position: [8.10000038, 0.800000012, -12]
+        Rotation: [-17.2999992, -16.1000004, -19.2999992]
+        Scale: [1, 1, 1]
   - ID: 5
-    Name: New GameObject 5
+    Name: Cube Yay
     Components:
+      Transform:
+        Position: [-6.80000019, 2.70000005, -13.8000002]
+        Rotation: [-39.7000008, 0, -33.2000008]
+        Scale: [1, 1, 1]
       Mesh:
-        vao: 4
+        vao: 1
         indexCount: 36
         textureID: 6
+  - ID: 6
+    Name: Cube Yay
+    Components:
+      Mesh:
+        vao: 1
+        indexCount: 36
+        textureID: 3
       Transform:
-        Position: [-5.9000001, 2.70000005, -11.6000004]
-        Rotation: [-39.7000008, 0, -33.2000008]
+        Position: [-6.5, -6, -18]
+        Rotation: [15.8000002, -18.2000008, -11.1000004]
+        Scale: [1, 1, 1]
+  - ID: 7
+    Name: Cube Yay
+    Components:
+      Mesh:
+        vao: 1
+        indexCount: 36
+        textureID: 4
+      Transform:
+        Position: [6.5, 1.79999995, -23.8999996]
+        Rotation: [-16.1000004, -15.8999996, -35]
+        Scale: [1, 1, 1]
+  - ID: 8
+    Name: Cube Yay
+    Components:
+      Mesh:
+        vao: 1
+        indexCount: 36
+        textureID: 1
+      Transform:
+        Position: [-7.80000019, 0.200000003, -29.7999992]
+        Rotation: [22.5, -34.2999992, 0]
+        Scale: [1, 1, 1]
+  - ID: 9
+    Name: Cube Yay
+    Components:
+      Mesh:
+        vao: 1
+        indexCount: 36
+        textureID: 2
+      Transform:
+        Position: [5.5, -2.9000001, -19.5]
+        Rotation: [-41.4000015, -24.8999996, -52.2999992]
         Scale: [1, 1, 1]
