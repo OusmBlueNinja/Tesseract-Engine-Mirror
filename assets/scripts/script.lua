@@ -11,7 +11,7 @@ function OnInit()
     -- Log a message with a custom blue color
     Engine.Log("This is a blue message.", {0.0, 0.0, 1.0, 1.0})
 
-    asd
+    
 
     
 end
@@ -20,7 +20,6 @@ end
 function OnUpdate(deltaTime)
     
     ticks = ticks + 1
-    
 
     local timestep = 5
     if itterator >= timestep then
