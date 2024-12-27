@@ -26,6 +26,8 @@ private:
 
     bool m_firstCall;
 
+    bool m_Initialized;
+
 
     // Helper function to call a Lua function with no arguments and no return values
 

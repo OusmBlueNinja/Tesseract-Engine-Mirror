@@ -75,14 +75,7 @@ bool ScriptComponent::Initialize()
     // Initialize LuaManager with the script path
     if (!m_LuaManager.init(ScriptPath))
     {
-        if (g_LoggerWindow)
-        {
-            g_LoggerWindow->AddLog("ScriptComponent: Failed to initialize LuaManager.", ImVec4(1.0f, 0.0f, 0.0f, 1.0f));
-        }
-        else
-        {
-            std::cerr << "ScriptComponent: Failed to initialize LuaManager." << std::endl;
-        }
+        DEBUG_PRINT("ScriptComponent: Failed to initialize LuaManager");
         return false;
     }
 

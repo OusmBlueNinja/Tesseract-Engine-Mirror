@@ -9,16 +9,11 @@
 
 #include "Windows/LoggerWindow.h"
 
-
 extern LoggerWindow *g_LoggerWindow;
-
 
 int lua_log_message(lua_State *L);
 
-
-
-
-LuaManager::LuaManager() : L(nullptr), m_firstCall(false) {}
+LuaManager::LuaManager() : L(nullptr), m_firstCall(false), m_Initialized(false) {}
 
 LuaManager::~LuaManager()
 {
@@ -50,11 +45,14 @@ bool LuaManager::init(const std::string &scriptPath)
     // Load and execute the Lua script
     if (luaL_dofile(L, scriptPath.c_str()) != LUA_OK)
     {
-        std::cerr << "Error running " << scriptPath << ": " << lua_tostring(L, -1) << "\n";
+        g_LoggerWindow->AddLog("%s", ImVec4(1.0f, 0.0f, 0.0f, 1.0f), lua_tostring(L, -1));
+        DEBUG_PRINT("%s: %s", scriptPath.c_str(), lua_tostring(L, -1));
         lua_close(L);
         L = nullptr;
+
         return false;
     }
+    m_Initialized = true;
     callLuaFunction("OnInit");
 
     return true;
@@ -62,6 +60,9 @@ bool LuaManager::init(const std::string &scriptPath)
 
 bool LuaManager::callLuaFunction(const std::string &funcName)
 {
+    if (!m_Initialized) {
+        return false;
+    }
     lua_getglobal(L, funcName.c_str());
     if (!lua_isfunction(L, -1))
     {
@@ -83,7 +84,9 @@ bool LuaManager::callLuaFunction(const std::string &funcName)
 
 bool LuaManager::onUpdate(float deltaTime)
 {
-
+    if (!m_Initialized) {
+        return false;
+    }
     // Push the 'OnUpdate' function onto the stack
     lua_getglobal(L, "OnUpdate"); // Ensure correct case
     if (!lua_isfunction(L, -1))
@@ -102,7 +105,7 @@ bool LuaManager::onUpdate(float deltaTime)
     if (lua_pcall(L, 1, 0, 0) != LUA_OK)
     {
         // Retrieve the error message from Lua
-        const char* luaError = lua_tostring(L, -1);
+        const char *luaError = lua_tostring(L, -1);
         if (luaError)
         {
             std::string errorMsg(luaError);
@@ -135,11 +138,9 @@ bool LuaManager::onUpdate(float deltaTime)
             std::cerr << "Unknown error calling 'OnUpdate'.\n";
         }
 
-
         lua_pop(L, 1); // Remove error message
 
         return false;
-
     }
     else
     {
@@ -156,6 +157,9 @@ bool LuaManager::onDrawGui()
 
 bool LuaManager::callFunction(const std::string &funcName, int args, int returns)
 {
+    if (!m_Initialized) {
+        return false;
+    }
     lua_getglobal(L, funcName.c_str());
     if (!lua_isfunction(L, -1))
     {
@@ -183,7 +187,7 @@ int lua_log_message(lua_State *L)
     // Check and retrieve the message string
     if (!lua_isstring(L, 1))
     {
-        lua_pushstring(L, "Incorrect argument to 'log_message'. Expected string as first argument.");
+        lua_pushstring(L, "Incorrect argument to 'Engine.Log'. Expected string as first argument.");
         lua_error(L);
         return 0; // Never reached, lua_error long jumps
     }
@@ -222,7 +226,7 @@ int lua_log_message(lua_State *L)
         }
         else
         {
-            lua_pushstring(L, "Incorrect argument to 'log_message'. Expected table for color.");
+            lua_pushstring(L, "Incorrect argument to 'Engine.Log'. Expected table for color.");
             lua_error(L);
             return 0;
         }

@@ -11,7 +11,6 @@ extern GameObject *g_SelectedObject; // Pointer to the currently selected object
 
 extern LoggerWindow *g_LoggerWindow;
 
-
 void InspectorWindow::Show()
 {
     // Increase window/item spacing for a cleaner look
@@ -369,9 +368,11 @@ void InspectorWindow::Show()
                     }
 
                     if (ImGui::Button("Reload Script"))
-                    {   
-                        script->Initialize();
-                        g_LoggerWindow->AddLog("Reloaded Script: %s", ImVec4(0.0f,1.0f,0.0f,1.0f), script->ScriptPath.c_str());
+                    {
+                        if (script->Initialize())
+                        {
+                            g_LoggerWindow->AddLog("Reloaded Script: %s", ImVec4(0.0f, 1.0f, 0.0f, 1.0f), script->ScriptPath.c_str());
+                        }
                     }
                 }
             }
