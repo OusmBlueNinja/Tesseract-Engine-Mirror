@@ -187,6 +187,8 @@ void MyEngine::Run()
     g_AssetManager.loadAsset<GLuint>(AssetType::TEXTURE, "assets/textures/default.png");
     g_AssetManager.loadAsset<GLuint>(AssetType::TEXTURE, "assets/textures/lush_grass.png");
     g_AssetManager.loadAsset<GLuint>(AssetType::TEXTURE, "assets/textures/vegetation_tree_bark_40.png");
+    g_AssetManager.loadAsset<GLuint>(AssetType::TEXTURE, "assets/textures/ak-47.jpg");
+
 
     g_AssetManager.loadAsset<GLuint>(AssetType::TEXTURE, "assets/textures/sky.png");
 

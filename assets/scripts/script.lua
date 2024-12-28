@@ -6,10 +6,6 @@ local ticks = 0
 local new_rotation = 0
 local speed = 50
 
-
-
-
-
 function OnInit()
     -- Log a message with a custom red color
     Engine.Log("This is a red message.", {1.0, 0.0, 0.0, 1.0})
@@ -38,12 +34,14 @@ function OnUpdate(deltaTime)
 
         
         -- Log the player's name with a white color
-        -- local pos = transform:GetPosition()
+        -- local pos = transform:GetRotation()
         -- local x = string.format("%.2f", pos.x)
         -- local y = string.format("%.2f", pos.y)
         -- local z = string.format("%.2f", pos.z)
             
-        -- Engine.Log("Player Pos: (" .. x .. ", " .. y .. ", " .. z .. ")", {1, 1, 1, 1})
+        -- Engine.Log("Player Rot: (" .. x .. ", " .. y .. ", " .. z .. ")", {1, 1, 1, 1}) 
+
+
 
         --local position = {x = 0.0, y = 2.0, z = -12.0} -- Define the new position
         --transform:SetPosition(position) -- Call the SetPosition method
@@ -53,8 +51,7 @@ function OnUpdate(deltaTime)
             new_rotation = 0
         end
 
-        local rotation = {x = -180.0, y = new_rotation, z = 0.0} -- Define the new position
-
+        local rotation = {x = new_rotation, y = new_rotation, z = new_rotation,} -- Define the new position
         transform:SetRotation(rotation) -- Call the SetPosition method
 
 

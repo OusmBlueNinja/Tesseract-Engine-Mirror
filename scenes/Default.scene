@@ -4,7 +4,7 @@ Entities:
     Components:
       Transform:
         Position: [0, 2.79999995, -12.6000004]
-        Rotation: [-180, 146.58255, 0]
+        Rotation: [128.988251, 128.988251, 128.988251]
         Scale: [1, 1, 1]
       Mesh:
         vao: 2
@@ -12,17 +12,17 @@ Entities:
         textureID: 1
         MeshPath: assets/models/LowPolyFiatUNO.obj
   - ID: 2
-    Name: Null Texture Box
+    Name: Gun
     Components:
       Transform:
-        Position: [7.80000019, -8.10000038, -20.6000004]
-        Rotation: [-86.3000031, 0, -66]
-        Scale: [1, 1, 1]
+        Position: [-0.899999976, 0.600000024, -0.300000012]
+        Rotation: [203.563934, 203.563934, 203.563934]
+        Scale: [0.00999999978, 0.00999999978, 0.00999999978]
       Mesh:
         vao: 5
-        indexCount: 36
-        textureID: 3
-        MeshPath: assets/models/DefaultMesh.obj
+        indexCount: 116445
+        textureID: 6
+        MeshPath: assets/models/Ak-47.obj
   - ID: 3
     Name: Grass Box Top
     Components:
@@ -31,7 +31,7 @@ Entities:
         Rotation: [-23.5, 15.8999996, -59.9000015]
         Scale: [1, 1, 1]
       Mesh:
-        vao: 5
+        vao: 6
         indexCount: 36
         textureID: 4
         MeshPath: assets/models/DefaultMesh.obj
@@ -43,7 +43,7 @@ Entities:
         Rotation: [-17.2999992, -16.1000004, -19.2999992]
         Scale: [1, 1, 1]
       Mesh:
-        vao: 5
+        vao: 6
         indexCount: 36
         textureID: 5
         MeshPath: assets/models/DefaultMesh.obj
@@ -51,9 +51,9 @@ Entities:
     Name: Skybox
     Components:
       Mesh:
-        vao: 5
+        vao: 6
         indexCount: 36
-        textureID: 6
+        textureID: 7
         MeshPath: assets/models/DefaultMesh.obj
       Transform:
         Position: [0, 0, 43.2000008]
@@ -67,7 +67,7 @@ Entities:
         Rotation: [15.8000002, -18.2000008, -11.1000004]
         Scale: [1, 1, 1]
       Mesh:
-        vao: 5
+        vao: 6
         indexCount: 36
         textureID: 3
         MeshPath: assets/models/DefaultMesh.obj
@@ -79,7 +79,7 @@ Entities:
         Rotation: [-16.1000004, -15.8999996, -35]
         Scale: [1, 1, 1]
       Mesh:
-        vao: 5
+        vao: 6
         indexCount: 36
         textureID: 4
         MeshPath: assets/models/DefaultMesh.obj
@@ -91,7 +91,7 @@ Entities:
         Rotation: [22.2999992, -32.7999992, 0]
         Scale: [1, 1, 1]
       Mesh:
-        vao: 5
+        vao: 6
         indexCount: 36
         textureID: 1
         MeshPath: assets/models/DefaultMesh.obj
@@ -103,7 +103,7 @@ Entities:
         Rotation: [-41.4000015, -22.6000004, -52.2999992]
         Scale: [1, 1, 1]
       Mesh:
-        vao: 5
+        vao: 6
         indexCount: 36
         textureID: 2
         MeshPath: assets/models/DefaultMesh.obj
