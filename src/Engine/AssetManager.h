@@ -75,7 +75,6 @@ public:
         if (it != m_AssetMap.end())
         {
             // Debug: Log the variant type
-            DEBUG_PRINT("[AssetManager] Found asset in map.");
             if (std::holds_alternative<T>(it->second))
             {
                 return std::get<T>(it->second);
@@ -99,7 +98,7 @@ public:
             }
             else
             {
-                return 0; // For non-pointer types
+                return 0; // For non-pointer 
             }
         }
 

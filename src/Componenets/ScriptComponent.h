@@ -33,7 +33,7 @@ private:
     LuaManager m_LuaManager;           // Instance of LuaManager
     std::string m_LastErrorMessage;    // To prevent duplicate error logs
 
-    // Disallow copying
+    // block copying
     ScriptComponent(const ScriptComponent&) = delete;
     ScriptComponent& operator=(const ScriptComponent&) = delete;
 
