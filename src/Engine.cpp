@@ -49,6 +49,10 @@ int g_GPU_Triangles_drawn_to_screen = 0;
 
 GameObject *g_SelectedObject; // Pointer to the currently selected object
 
+
+
+
+
 bool MyEngine::Init(int width, int height, const std::string &title)
 {
     DEBUG_PRINT("[START] Engine Init");

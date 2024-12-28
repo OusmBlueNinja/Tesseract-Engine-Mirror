@@ -1,8 +1,12 @@
 -- script.lua
+local Math = require("math")
+
 local itterator = 0
 local ticks = 0
 local new_rotation = 0
 local speed = 50
+
+
 
 
 
@@ -49,7 +53,7 @@ function OnUpdate(deltaTime)
             new_rotation = 0
         end
 
-        local rotation = {x = -180, y = new_rotation, z = new_rotation} -- Define the new position
+        local rotation = {x = -180.0, y = new_rotation, z = 0.0} -- Define the new position
 
         transform:SetRotation(rotation) -- Call the SetPosition method
 
