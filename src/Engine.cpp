@@ -274,7 +274,7 @@ void MyEngine::Run()
 
         m_SceneWindow->Show();
 
-        //m_luaEditor->Show();
+        m_luaEditor->Show();
 
         // After rendering
         m_PerformanceWindow->UpdatePerformanceStats(-1, g_GPU_Triangles_drawn_to_screen);
