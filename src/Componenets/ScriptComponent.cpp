@@ -73,7 +73,7 @@ bool ScriptComponent::Initialize()
     }
 
     // Initialize LuaManager with the script path
-    if (!m_LuaManager.init(ScriptPath))
+    if (!m_LuaManager.Initialize(ScriptPath))
     {
         DEBUG_PRINT("ScriptComponent: Failed to initialize LuaManager");
         return false;
@@ -85,5 +85,5 @@ bool ScriptComponent::Initialize()
 void ScriptComponent::Update(float deltaTime)
 {
     // Call the Update method of LuaManager
-    m_LuaManager.onUpdate(deltaTime);
+    m_LuaManager.Update(deltaTime);
 }

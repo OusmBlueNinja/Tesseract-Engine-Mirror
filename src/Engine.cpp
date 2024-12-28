@@ -22,6 +22,11 @@
 #include "Windows/InspectorWindow.h"
 #include "Windows/SceneWindow.h"
 
+
+// Create an instance
+
+// In your rendering loop
+
 #include "Engine/ThemeManager.h"
 #include "Engine/SceneManager.h"
 #include "Engine/LuaAPI.h"
@@ -36,6 +41,7 @@ AssetManager g_AssetManager;
 LoggerWindow *g_LoggerWindow;
 
 SceneManager g_SceneManager;
+
 
 std::vector<std::shared_ptr<GameObject>> g_GameObjects;
 
@@ -105,9 +111,10 @@ bool MyEngine::Init(int width, int height, const std::string &title)
     m_LoggerWindow = std::make_unique<LoggerWindow>();
     m_InspectorWindow = std::make_unique<InspectorWindow>();
     m_SceneWindow = std::make_unique<SceneWindow>();
+    m_luaEditor = std::make_unique<LuaEditorWindow>();
+
 
     g_LoggerWindow = m_LoggerWindow.get();
-
 
     // Optionally, call 'onInit' Lua function
 
@@ -118,7 +125,6 @@ bool MyEngine::Init(int width, int height, const std::string &title)
     m_Running = true;
     m_LastTime = glfwGetTime();
     DEBUG_PRINT("[OK] Engine Init ");
-
 
     return true;
 }
@@ -243,18 +249,18 @@ void MyEngine::Run()
 
         m_InspectorWindow->Show();
 
+        if (1)
+        {
+            for (auto &Gameobject : g_GameObjects)
+            {
 
-        if (1) {
-            for (auto& Gameobject : g_GameObjects) {
-                
                 // Handle Componenets That require Updates
 
                 std::shared_ptr<ScriptComponent> script = Gameobject->GetComponent<ScriptComponent>();
-                if (script){ // Stupid Null Checks
+                if (script)
+                { // Stupid Null Checks
                     script->Update(frame_delta);
-                } 
-
-
+                }
             }
         }
 
@@ -267,6 +273,8 @@ void MyEngine::Run()
         m_LoggerWindow->Show(); // Logs
 
         m_SceneWindow->Show();
+
+        //m_luaEditor->Show();
 
         // After rendering
         m_PerformanceWindow->UpdatePerformanceStats(-1, g_GPU_Triangles_drawn_to_screen);

@@ -8,6 +8,7 @@
 #include "Windows/LoggerWindow.h"
 #include "Windows/InspectorWindow.h"
 #include "Windows/SceneWindow.h"
+#include "Windows/LuaEditorWindow.h"
 
 #include "Componenets/GameObject.h"
 #include "Componenets/Mesh.h"
@@ -18,10 +19,7 @@
 #include "Engine/SceneManager.h"
 #include "Engine/LuaAPI.h"
 
-
-
 #include "TestModel.h"
-
 
 #include "gcml.h"
 
@@ -43,7 +41,6 @@ private:
     void ShowDockSpace();
 
 private:
-
     GLFWwindow *m_Window = nullptr;
     bool m_Running = false;
 
@@ -53,6 +50,7 @@ private:
     std::unique_ptr<LoggerWindow> m_LoggerWindow;
     std::unique_ptr<InspectorWindow> m_InspectorWindow;
     std::unique_ptr<SceneWindow> m_SceneWindow;
+    std::unique_ptr<LuaEditorWindow> m_luaEditor;
 
     double m_LastFrameTime = 0.0; // Initialize with the current time
     double m_TimeAccumulator = 0.0;

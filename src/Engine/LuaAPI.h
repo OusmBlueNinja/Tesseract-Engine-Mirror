@@ -1,36 +1,98 @@
+// LuaAPI.h
+
 #pragma once
 
-#include "lua.hpp"
-#include <string>
+// Include Lua headers
+extern "C"
+{
+#include <lua.h>
+#include <lauxlib.h>
+#include <lualib.h>
+}
 
-class LuaManager {
+// Include standard libraries
+#include <string>
+#include <optional>
+
+// Forward declarations to avoid circular dependencies
+class Component;
+class TransformComponent;
+class MeshComponent;
+class ScriptComponent;
+class GameObject;
+class LoggerWindow;
+
+// LuaManager class definition
+class LuaManager
+{
 public:
+    // Constructor
     LuaManager();
+
+    // Destructor
     ~LuaManager();
 
-    // Initialize the Lua state and load the script
-    bool init(const std::string& scriptPath);
+    /**
+     * @brief Initializes the LuaManager with the specified Lua script.
+     *
+     * This function creates a new Lua state, opens standard libraries,
+     * registers all necessary metatables, binds essential functions to Lua,
+     * and executes the provided Lua script.
+     *
+     * @param scriptPath The file path to the Lua script to execute.
+     * @return true if initialization is successful; false otherwise.
+     */
+    bool Initialize(const std::string &scriptPath);
 
-    // Call the 'onUpdate' function in Lua
-    bool onUpdate(float deltaTime);
-
-    // Call the 'onDrawGui' function in Lua
-    bool onDrawGui();
-
-    // Optionally, call other Lua functions as needed
-    bool callFunction(const std::string& funcName, int args = 0, int returns = 0);
+    /**
+     * @brief Updates the LuaManager each frame.
+     *
+     * This function calls the Lua `OnUpdate` function, passing the
+     * delta time since the last frame. It handles any errors that
+     * occur during the execution of the Lua function.
+     *
+     * @param deltaTime The time elapsed since the last frame.
+     */
+    void Update(float deltaTime);
 
 private:
-    lua_State* L;
-    std::string m_LastErrorMessage; // Stores the last error message
+    // Lua state
+    std::string ScriptPath;
 
-    bool m_firstCall;
+    lua_State *m_LuaState;
 
-    bool m_Initialized;
+    // Last error message to prevent duplicate logging
+    std::string m_LastErrorMessage;
+    void RegisterAllMetatables();
+    void RegisterComponentMetaTable();
 
+    void RegisterTransformComponentMetaTable();
+    void RegisterMeshComponentMetaTable();
+    void RegisterScriptComponentMetaTable();
+    void RegisterGameObjectMetatable();
 
-    // Helper function to call a Lua function with no arguments and no return values
+    // Binding functions for Component
+    static int Lua_Component_GetName(lua_State *L);
 
-    bool callLuaFunction(const std::string& funcName);
+    // Binding functions for TransformComponent
+    static int Lua_TransformComponent_GetPosition(lua_State *L);
+    static int Lua_TransformComponent_SetPosition(lua_State *L);
+
+    static int Lua_TransformComponent_GetRotation(lua_State *L);
+    static int Lua_TransformComponent_SetRotation(lua_State *L);
+
+    // Binding functions for MeshComponent
+    static int Lua_MeshComponent_GetMeshData(lua_State *L);
+
+    // Binding functions for ScriptComponent
+    static int Lua_ScriptComponent_GetScriptPath(lua_State *L);
+
+    // Binding functions for GameObject
+    static int Lua_GameObject_GetName(lua_State *L);
+    static int Lua_GameObject_GetComponent(lua_State *L);
+    static int Lua_GetGameObjectByTag(lua_State *L);
+
+    // Binding functions for Engine table
+    static int Lua_Engine_Log(lua_State *L);
+    static int Lua_Engine_GetGameObjectByTag(lua_State *L);
 };
-

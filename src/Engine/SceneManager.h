@@ -1,7 +1,6 @@
-
-#include "./Componenets/GameObject.h"
-
-
+#pragma once
+#include <vector>
+#include "Componenets/GameObject.h"
 
 
 class SceneManager

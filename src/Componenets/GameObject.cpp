@@ -6,13 +6,10 @@
 
 #include "../Windows/LoggerWindow.h"
 
-
-
 extern LoggerWindow *g_LoggerWindow;
 
-
 GameObject::GameObject(int id, const std::string &name)
-    : id(id), name(name)    
+    : id(id), name(name)
 {
 }
 
@@ -21,11 +18,17 @@ int GameObject::GetComponentCount() const
     return static_cast<int>(components.size());
 }
 
+std::string GameObject::GetName() const
+{
+    return name;
+}
+
+
 
 void GameObject::AddComponent(const std::shared_ptr<Component> &component)
 {
     components[component->GetName()] = component;
-    //std::cout << "Added " << component->GetName() << std::endl;
+    // std::cout << "Added " << component->GetName() << std::endl;
 }
 
 std::shared_ptr<Component> GameObject::GetComponentByName(const std::string &name) const
@@ -59,7 +62,6 @@ YAML::Node GameObject::Serialize()
 void GameObject::Deserialize(const YAML::Node &node)
 {
 
-
     if (node["ID"])
     {
         id = node["ID"].as<int>();
@@ -74,7 +76,7 @@ void GameObject::Deserialize(const YAML::Node &node)
 
         for (auto it = componentsNode.begin(); it != componentsNode.end(); ++it)
         {
-            
+
             std::string compName = it->first.as<std::string>();
             YAML::Node compNode = it->second;
 
@@ -100,26 +102,20 @@ void GameObject::Deserialize(const YAML::Node &node)
             {
                 g_LoggerWindow->AddLog("[SceneManager] Failed to load Component:  %s", compName.c_str());
                 DEBUG_PRINT("[SceneManager] Failed to load Component: %s", compName.c_str());
-                
             }
             // Add deserialization for other components as needed
         }
     }
 }
 
-
-
-
-
-
 //}
-//else if (compName == MeshComponent::GetStaticName())
+// else if (compName == MeshComponent::GetStaticName())
 //{
 //    auto render = std::make_shared<MeshComponent>();
 //    render->Deserialize(compNode);
 //    AddComponent(render);
 //}
-//else if (compName == MeshComponent::GetStaticName())
+// else if (compName == MeshComponent::GetStaticName())
 //{
 //    auto render = std::make_shared<MeshComponent>();
 //    render->Deserialize(compNode);

@@ -61,6 +61,10 @@ function OnUpdate(deltaTime)
         -- For example, you might want to move the player, change properties, etc.
         -- player:Move(newPosition)
         -- player:SetHealth(100)
+    else
+        -- Failed to retrieve the GameObject; it doesn't exist
+        -- Log an error message with a red color
+        Engine.Log("Error: Player GameObject not found!", {1, 0, 0, 1})
     end
     
 end

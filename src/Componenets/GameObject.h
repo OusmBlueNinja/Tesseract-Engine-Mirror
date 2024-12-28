@@ -25,6 +25,8 @@ public:
 
     GameObject(int id, const std::string &name);
 
+    std::string GetName() const;
+
     void AddComponent(const std::shared_ptr<Component> &component);
     std::shared_ptr<Component> GetComponentByName(const std::string &name) const;
 
