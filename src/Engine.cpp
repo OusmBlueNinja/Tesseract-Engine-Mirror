@@ -160,8 +160,9 @@ void MyEngine::Run()
     if (mesh)
     {
         // printf("Got Valid Mesh Component\n");
-        mesh->vao = CreateCubeVAO();
-        mesh->indexCount = 36;
+        Model * model = g_AssetManager.loadAsset<Model *>(AssetType::MODEL, "assets/models/DefaultCube.obj");
+        mesh->vao = model->vao;
+        mesh->indexCount = model->indices.size();
         mesh->textureID = g_AssetManager.loadAsset<GLuint>(AssetType::TEXTURE, "assets/textures/wood.png");
     }
     else
