@@ -1,70 +1,116 @@
 ![](./assets/images/Banner.png)
 
-# Tesseract-Engine 
+# Tesseract-Engine
 
-A 3D Game engine for Small to Medium-sized games with a LUA Scripting interface. written in C++ with a simple, Good looking interface. 
+**A 3D Game Engine for Small to Medium-sized Games**
 
+![Lua](https://img.shields.io/badge/Lua-Support-blue) ![C++](https://img.shields.io/badge/C%2B%2B-Built%20With-orange) ![Version](https://img.shields.io/badge/Version-0.0.81-brightgreen) ![License](https://img.shields.io/badge/License-MIT-green)
 
-## Tools Used
+Tesseract-Engine is a lightweight and powerful game engine designed for developers working on small to medium-sized projects. With a simple and visually appealing interface, it offers a LUA scripting environment and is built in C++ for optimal performance.
 
-- [ImGui](https://github.com/ocornut/imgui)
-- [GCML](https://dock-it.dev/GigabiteStudios/gcml)
-- [DLL-Exctractor](https://dock-it.dev/Bit-By-Byte/DLL-Extractor)
+---
 
-## History Of Tesseract
+## Features
+- **User-Friendly Interface**: Simplifies the game development process.
+- **Lua Scripting Support**: Integrates Lua for customizable and flexible scripting.
+- **Engine Tools**: Includes utilities like a profiler and playback system.
+- **High Compatibility**: Supports various asset formats, including OBJ files and dynamic textures.
 
+---
 
+## Tools and Libraries Used
 
-### Note: These screenshots are sorted by version.
+- [ImGui](https://github.com/ocornut/imgui): For UI creation.
+- [GCML](https://dock-it.dev/GigabiteStudios/gcml): General C Macros Library
+- [DLL-Extractor](https://dock-it.dev/Bit-By-Byte/DLL-Extractor): For managing and extracting DLL dependencies.
 
+---
 
+## Development History
 
+### Note: Screenshots are sorted by version.
 
-#### 0.0.76
-Added:
-- Engine Profiler
-    - a Profiler to see where your frames are going.
-- Playback
-    - you can now click play and pause, and it will save your current scene in a temp directory. then when you pause it will load it.
-- Lua Math Library
-    - math.lua
-    - `local Math = require("math")`
-- Temp Folder Access
-    - C++ function to crate a temp file
+### **Version 0.0.76**
+**Updates:**
+- **Engine Profiler**: Visualize frame resource usage for optimization.
+- **Playback System**: Start and pause gameplay with automatic scene saving and restoration.
+- **Lua Math Library**: Includes `math.lua` for advanced calculations.
+    ```lua
+    local Math = require("math")
+    ```
+- **Temporary File Access**: Added C++ function to create temporary files.
 
+**Screenshot:**
 
 ![](./assets/images/SS-Dev2_2.png)
 
+---
 
-#### 0.0.68
-- Added Script Component
-- Added Simple Lua editor (W.I.P)
-- Added Lua Binding
-    - `Engine.GetGameObjectByTag("")`
-    - `Component::GetComponent(")`
-    - `Engine.Log("")`
-    - `Transform:SetPosition(vec3)`
-    - `Transform:SetRotation(vec3)`
+### **Version 0.0.68**
+**Updates:**
+- **Script Component**: Enhanced Lua scripting integration.
+- **Lua Editor (WIP)**: A basic Lua script editor.
+- **Lua Binding**: API for interfacing Lua with the engine.
+    ```lua
+    Engine.GetGameObjectByTag("")
+    Component::GetComponent("")
+    Engine.Log("")
+    Transform:SetPosition(vec3)
+    Transform:SetRotation(vec3)
+    ```
+
+**Screenshot:**
 
 ![](./assets/images/SS-Dev2_1.png)
 
-#### 0.0.50
-- Added Texture Preview and Automatic Texture and Model Loading
+---
+
+### **Version 0.0.50**
+**Updates:**
+- **Texture Preview**: Automatic texture and model loading.
+
+**Screenshot:**
+
 ![](./assets/images/SS-Dev2_0.png)
 
-#### 0.0.45
-- Added support for OBJ files
+---
+
+### **Version 0.0.45**
+**Updates:**
+- **OBJ File Support**: Added compatibility for OBJ asset files.
+
+**Screenshot:**
+
 ![](./assets/images/SS-Dev1_4.png)
 
-#### 0.0.37
-- Added Dynamic Texture suport. 
+---
+
+### **Version 0.0.37**
+**Updates:**
+- **Dynamic Texture Support**: Enhanced texture management and rendering.
+
+**Screenshot:**
+
 ![](./assets/images/SS-Dev1_3.png)
 
-#### 0.0.33
+---
+
+### **Version 0.0.33**
+**Screenshot:**
+
 ![](./assets/images/SS-Dev1_2.png)
 
-#### 0.0.23
+---
+
+### **Version 0.0.23**
+**Screenshot:**
+
 ![](./assets/images/SS-Dev1_1.png)
 
-#### 0.0.15
+---
+
+### **Version 0.0.15**
+**Screenshot:**
+
 ![](./assets/images/SS-Dev1_0.png)
+
