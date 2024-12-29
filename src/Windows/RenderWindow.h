@@ -8,7 +8,7 @@
 class RenderWindow
 {
 public:
-    void Show();
+    void Show(bool *GameRunning);
 
 private:
     void InitGLResources();

@@ -13,7 +13,6 @@
 extern std::vector<std::shared_ptr<GameObject>> g_GameObjects;
 extern std::shared_ptr<GameObject> g_SelectedObject;
 
-
 extern AssetManager g_AssetManager;
 
 // Helper: Create a default cube GameObject
@@ -38,7 +37,7 @@ std::shared_ptr<GameObject> CreateDefaultCube()
 
 void SceneWindow::Show()
 {
-    if (ImGui::Begin("Scene Window"))
+    if (ImGui::Begin("Scene Window##SceneWindow"))
     {
         // Add Button
         if (ImGui::Button("Add Object"))
@@ -52,60 +51,57 @@ void SceneWindow::Show()
         // Begin child region for the list to make it scrollable
         ImGui::BeginChild("GameObjectList", ImVec2(0, -ImGui::GetFrameHeightWithSpacing()), false, ImGuiWindowFlags_HorizontalScrollbar);
 
-        // Define TreeNode flags for better visuals and interaction
-        ImGuiTreeNodeFlags nodeFlags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth;
+        // Initialize an external index to keep track of each GameObject's position
+        size_t index = 0;
 
-        // Iterate through GameObjects using index for unique identification
-        for (size_t i = 0; i < g_GameObjects.size(); ++i)
+        // Iterate through GameObjects using a range-based for loop
+        for (auto &obj : g_GameObjects)
         {
-            auto &obj = g_GameObjects[i];
+            // Determine if the current GameObject is selected
+            bool isSelected = (g_SelectedObject == obj);
 
-            // Determine flags based on selection
-            ImGuiTreeNodeFlags flags = nodeFlags;
-            if (g_SelectedObject == obj)
-                flags |= ImGuiTreeNodeFlags_Selected;
+            // Create a unique label for each selectable item using the index
+            // This ensures ImGui uniquely identifies each item
+            std::string label = obj->name + "##" + std::to_string(index);
 
-            // Unique identifier for each GameObject node using pointer to ensure uniqueness
-            // Alternatively, you can use the object's ID or address
-            std::string nodeLabel = obj->name;
-            bool nodeOpen = ImGui::TreeNodeEx((void *)(intptr_t)i, flags, nodeLabel.c_str());
-
-            // Handle selection
-            if (ImGui::IsItemClicked(ImGuiMouseButton_Left))
+            // Render the GameObject as a selectable item in the list
+            if (ImGui::Selectable(label.c_str(), isSelected))
             {
+                // Update the selected GameObject when clicked
                 g_SelectedObject = obj;
             }
 
-            // Right-click context menu for GameObject actions
+            // Handle right-click context menu for the current item
             if (ImGui::BeginPopupContextItem())
             {
-                // Delete GameObject Option
+                // Option to remove the GameObject
                 if (ImGui::MenuItem("Remove"))
                 {
+                    // Remove the GameObject by its index
+                    RemoveGameObject(static_cast<int>(index));
 
-                    RemoveGameObject(static_cast<int>(i));
-
+                    // End the popup before breaking out of the loop
                     ImGui::EndPopup();
-                    // Since we've erased the current entity, adjust the loop accordingly
-                    // Decrement i to account for the removed element
-                    --i;
-                    continue; // Skip the rest of the loop iteration
+
+                    // Since we've modified the container, exit the loop to prevent issues
+                    break;
                 }
 
+                // End the context menu popup
                 ImGui::EndPopup();
             }
 
-            // Optionally, implement double-click to rename or perform other actions
-
-            // Close the tree node
-            if (nodeOpen)
-            {
-                // If you decide to add child nodes in the future, handle them here
-                // Currently, no additional handling is required
-
-                ImGui::TreePop();
-            }
+            // Increment the index for the next GameObject
+            ++index;
         }
+
+        // Optional: Display a message if there are no GameObjects
+        if (g_GameObjects.empty())
+        {
+            ImGui::Text("No Game Objects available.");
+        }
+
+        // End the ImGui window or group
 
         ImGui::EndChild();
 
@@ -149,7 +145,7 @@ void SceneWindow::RemoveGameObject(int index)
     }
     else
     {
-        DEBUG_PRINT("Attempted to remove GameObject with invalid index: %d", index );
+        DEBUG_PRINT("Attempted to remove GameObject with invalid index: %d", index);
     }
 }
 

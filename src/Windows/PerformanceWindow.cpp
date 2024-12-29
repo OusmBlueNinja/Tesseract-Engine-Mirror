@@ -103,7 +103,7 @@ void PerformanceWindow::Show(float fps, float ms)
 
     // Optional style adjustments
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(10, 10));
-    ImGui::Begin("Performance");
+    ImGui::Begin("Performance##performance");
 
     // Colored header
     ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.2f, 1.0f), "Performance Stats");

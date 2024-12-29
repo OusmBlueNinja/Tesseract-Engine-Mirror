@@ -18,7 +18,7 @@ void InspectorWindow::Show()
     ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(6, 4));
     ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(10, 10));
 
-    if (ImGui::Begin("Inspector"))
+    if (ImGui::Begin("Inspector##InspectorWindow"))
     {
         // Title label (white text)
         if (g_SelectedObject)
@@ -34,8 +34,6 @@ void InspectorWindow::Show()
             ImGui::Text("Editing Object: %s", g_SelectedObject->name.c_str());
             ImGui::Text("Components: %d", g_SelectedObject->GetComponentCount());
 
-            ImGui::Spacing();
-            ImGui::Separator();
             ImGui::Spacing();
 
             // Begin two-column layout for labels and inputs
@@ -69,9 +67,93 @@ void InspectorWindow::Show()
             // End columns
             ImGui::Columns(1);
 
-            ImGui::Spacing();
             ImGui::Separator();
-            ImGui::Spacing();
+
+            // ===========================
+            // 2) ADD COMPONENT SECTION
+            // ===========================
+
+
+            ImGui::Text("Add Component:");
+            ImGui::SameLine();
+
+            // Define available components to add
+            static int selectedComponent = 0;
+            const char *componentOptions[] = {"Transform", "Mesh", "Script", "Camera"};
+            const int componentCount = sizeof(componentOptions) / sizeof(componentOptions[0]);
+
+            // Create a Combo Box for component selection
+
+            ImGui::Combo("##ComponentCombo", &selectedComponent, componentOptions, componentCount);
+
+            // Add Button to add the selected component
+            if (ImGui::Button("Add"))
+            {
+                if (selectedComponent == 0) // TransformComponent
+                {
+                    // Check if TransformComponent already exists to prevent duplicates
+                    std::shared_ptr<TransformComponent> existingTransform = g_SelectedObject->GetComponent<TransformComponent>();
+                    if (!existingTransform)
+                    {
+                        g_SelectedObject->AddComponent(std::make_shared<TransformComponent>());
+                        g_LoggerWindow->AddLog("TransformComponent added to %s.", g_SelectedObject->name.c_str());
+                    }
+                    else
+                    {
+                        g_LoggerWindow->AddLog("TransformComponent already exists on %s.", g_SelectedObject->name.c_str());
+                    }
+                }
+                else if (selectedComponent == 1) // MeshComponent
+                {
+                    // Check if MeshComponent already exists to prevent duplicates
+                    std::shared_ptr<MeshComponent> existingMesh = g_SelectedObject->GetComponent<MeshComponent>();
+                    if (!existingMesh)
+                    {
+                        g_SelectedObject->AddComponent(std::make_shared<MeshComponent>());
+                        g_LoggerWindow->AddLog("MeshComponent added to %s.", g_SelectedObject->name.c_str());
+                    }
+                    else
+                    {
+                        g_LoggerWindow->AddLog("MeshComponent already exists on %s.", g_SelectedObject->name.c_str());
+                    }
+                }
+                else if (selectedComponent == 2) // ScriptComponent
+                {
+                    // Check if ScriptComponent already exists to prevent duplicates
+                    std::shared_ptr<ScriptComponent> existingScript = g_SelectedObject->GetComponent<ScriptComponent>();
+                    if (!existingScript)
+                    {
+                        g_SelectedObject->AddComponent(std::make_shared<ScriptComponent>());
+                        g_LoggerWindow->AddLog("ScriptComponent added to %s.", g_SelectedObject->name.c_str());
+                    }
+                    else
+                    {
+                        g_LoggerWindow->AddLog("ScriptComponent already exists on %s.", g_SelectedObject->name.c_str());
+                    }
+                }
+                else if (selectedComponent == 3) // CameraComponent
+                {
+                    // Check if CameraComponent already exists to prevent duplicates
+                    std::shared_ptr<CameraComponent> existingCamera = g_SelectedObject->GetComponent<CameraComponent>();
+                    if (!existingCamera)
+                    {
+                        g_SelectedObject->AddComponent(std::make_shared<CameraComponent>());
+                        g_LoggerWindow->AddLog("CameraComponent added to %s.", g_SelectedObject->name.c_str());
+                    }
+                    else
+                    {
+                        g_LoggerWindow->AddLog("CameraComponent already exists on %s.", g_SelectedObject->name.c_str());
+                    }
+                }
+                else
+                {
+                    // Handle unknown selections if necessary
+                    g_LoggerWindow->AddLog("Unknown component selection.");
+                }
+            }
+
+            ImGui::Separator();
+
 
             // ===========================
             // 1) TRANSFORM
@@ -344,7 +426,6 @@ void InspectorWindow::Show()
 
             if (script && g_SelectedObject)
             {
-
                 // Transform* transform = &g_SelectedObject->transform;
 
                 ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
@@ -356,19 +437,25 @@ void InspectorWindow::Show()
                 {
                     //    Define a maximum buffer size
                     const size_t BUFFER_SIZE = 256;
+
                     // Allocate a buffer and initialize it with the current string
                     char buffer[BUFFER_SIZE];
                     strncpy(buffer, script->ScriptPath.c_str(), BUFFER_SIZE - 1);
+
                     buffer[BUFFER_SIZE - 1] = '\0'; // Ensure null-termination
+
+
                     // Render the InputText widget
-                    if (ImGui::InputText(script->ScriptPath.c_str(), buffer, BUFFER_SIZE))
+                    if (ImGui::InputText("Script Path", buffer, BUFFER_SIZE))
                     {
+
                         // Update the string if user made changes
                         script->ScriptPath = buffer;
                     }
 
                     if (ImGui::Button("Reload Script"))
                     {
+
                         if (script->Initialize())
                         {
                             g_LoggerWindow->AddLog("Reloaded Script: %s", ImVec4(0.0f, 1.0f, 0.0f, 1.0f), script->ScriptPath.c_str());
@@ -376,42 +463,6 @@ void InspectorWindow::Show()
                     }
                 }
             }
-
-            // ===========================
-            // 2) SCRIPT
-            // ===========================
-            // We keep script text in white
-            // if (ImGui::CollapsingHeader("Script##Main", ImGuiTreeNodeFlags_DefaultOpen))
-            //{
-            //     if (ImGui::IsItemHovered())
-            //     {
-            //         ImGui::BeginTooltip();
-            //         ImGui::TextUnformatted("Attach a script or logic component here.");
-            //         ImGui::EndTooltip();
-            //     }
-
-            //    ImGui::TextUnformatted("Script Name:");
-            //    ImGui::SameLine();
-
-            //    {
-            //        char buffer[128];
-            //        std::snprintf(buffer, sizeof(buffer), "%s", script.scriptName.c_str());
-            //        ImGui::SetNextItemWidth(-1);
-            //        if (ImGui::InputText("##ScriptName", buffer, sizeof(buffer)))
-            //        {
-            //            script.scriptName = buffer;
-            //        }
-            //    }
-
-            //    ImGui::Spacing();
-
-            //    ImGui::TextUnformatted("Script Enabled:");
-            //    ImGui::SameLine();
-            //    ImGui::Checkbox("##ScriptEnabled", &script.enabled);
-
-            //    ImGui::Spacing();
-            //    ImGui::Separator();
-            //}
         }
         ImGui::End();
 

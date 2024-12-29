@@ -56,13 +56,6 @@ public:
 
     using AssetVariant = std::variant<GLuint, Shader *, std::string, Model *>;
 
-    // Load an asset from disk (texture, shader, etc.)
-    // Returns a void* pointer to the loaded resource.
-    //   - For TEXTURE, cast to (GLuint)
-    //   - For SHADER, cast to (Shader*)
-    //   - For SOUND, cast to whatever you store
-
-    // Template function to load an asset
     // Template function to load an asset
     template <typename T>
     T loadAsset(AssetType type, const std::string &path)

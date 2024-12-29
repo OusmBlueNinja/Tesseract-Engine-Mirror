@@ -10,7 +10,6 @@
 
 #include "gcml.h"
 
-
 #include "Componenets/GameObject.h"
 #include "Componenets/mesh.h"
 #include "Componenets/transform.h"
@@ -28,8 +27,8 @@ extern std::vector<std::shared_ptr<GameObject>> g_GameObjects;
 // Extern reference to our global (or extern) asset manager
 extern AssetManager g_AssetManager;
 
-extern int g_GPU_Triangles_drawn_to_screen;
 
+extern int g_GPU_Triangles_drawn_to_screen;
 
 // Example cube data (position + UVs)
 static float g_CubeVertices[] =
@@ -182,10 +181,77 @@ static unsigned int g_CubeIndices[] =
         // Bottom
         20, 21, 22, 22, 23, 20};
 
-void RenderWindow::Show()
+
+
+
+bool PlayPauseButton(const char* label, bool* isPlaying)
 {
-    
-    ImGui::Begin("Editor");
+    // Define button size
+    ImVec2 buttonSize = ImVec2(50, 50); // Adjust size as needed
+
+    // Begin the button
+    if (ImGui::Button(label, buttonSize))
+    {
+        // Toggle the state
+        *isPlaying = !(*isPlaying);
+        return true; // Indicate that the state was toggled
+    }
+
+    // Add tooltip
+    if (ImGui::IsItemHovered())
+    {
+        ImGui::SetTooltip(*isPlaying ? "Pause (Space)" : "Play (Space)");
+    }
+
+    // Get the current window's draw list
+    ImDrawList* draw_list = ImGui::GetWindowDrawList();
+
+    // Get the position of the button
+    ImVec2 button_pos = ImGui::GetItemRectMin();
+    ImVec2 button_size = ImGui::GetItemRectSize();
+    ImVec2 center = ImVec2(button_pos.x + button_size.x * 0.5f, button_pos.y + button_size.y * 0.5f);
+
+    // Define icon size
+    float icon_size = 20.0f;
+    float half_icon_size = icon_size / 2.0f;
+
+    // Define colors
+    ImU32 icon_color = ImGui::GetColorU32(ImGuiCol_Text);
+
+    if (*isPlaying)
+    {
+        // Draw Pause Icon (two vertical bars)
+        float bar_width = 4.0f;
+        float spacing = 6.0f;
+
+        // Left bar
+        ImVec2 left_bar_p1 = ImVec2(center.x - spacing - bar_width, center.y - half_icon_size);
+        ImVec2 left_bar_p2 = ImVec2(center.x - spacing, center.y + half_icon_size);
+        draw_list->AddRectFilled(left_bar_p1, left_bar_p2, icon_color, 2.0f);
+
+        // Right bar
+        ImVec2 right_bar_p1 = ImVec2(center.x + spacing, center.y - half_icon_size);
+        ImVec2 right_bar_p2 = ImVec2(center.x + spacing + bar_width, center.y + half_icon_size);
+        draw_list->AddRectFilled(right_bar_p1, right_bar_p2, icon_color, 2.0f);
+    }
+    else
+    {
+        // Draw Play Icon (triangle)
+        ImVec2 p1 = ImVec2(center.x - half_icon_size, center.y - half_icon_size);
+        ImVec2 p2 = ImVec2(center.x - half_icon_size, center.y + half_icon_size);
+        ImVec2 p3 = ImVec2(center.x + half_icon_size, center.y);
+        draw_list->AddTriangleFilled(p1, p2, p3, icon_color);
+    }
+
+    return false; // No toggle occurred
+}
+
+
+
+void RenderWindow::Show(bool *GameRunning)
+{
+
+    ImGui::Begin("Editor##EditorWindow");
 
     ImVec2 size = ImGui::GetContentRegionAvail();
     int w = static_cast<int>(size.x);
@@ -197,6 +263,13 @@ void RenderWindow::Show()
         m_Initialized = true;
     }
 
+    // Center the button
+    ImGui::SetCursorPosX((ImGui::GetWindowWidth() - 60) * 0.5f);
+
+    // Render the Play/Pause button
+    // Render the Play/Pause button
+    PlayPauseButton("##PlayPauseButton", GameRunning);
+        
 
 
     // If there's space, render to the FBO, then show it as an ImGui image
@@ -205,7 +278,7 @@ void RenderWindow::Show()
     {
         if (w != m_LastWidth || h != m_LastHeight)
         {
-            
+
             m_FBO.Create(w, h);
             m_LastWidth = w;
             m_LastHeight = h;
@@ -220,8 +293,9 @@ void RenderWindow::Show()
         ImGui::Text("No space to render.");
     }
 
-    ImGui::End();
+    
 
+    ImGui::End();
 }
 
 void RenderWindow::InitGLResources()
@@ -231,7 +305,7 @@ void RenderWindow::InitGLResources()
     // ----------------------------------------------------
 
     {
-        Shader* shaderAsset = g_AssetManager.loadAsset<Shader*>(AssetType::SHADER, "assets/shaders/UnlitMaterial");
+        Shader *shaderAsset = g_AssetManager.loadAsset<Shader *>(AssetType::SHADER, "assets/shaders/UnlitMaterial");
         if (!shaderAsset)
         {
             fprintf(stderr, "[RenderWindow] Failed to load shader via AssetManager.\n");
@@ -285,13 +359,10 @@ void RenderWindow::InitGLResources()
     // ----------------------------------------------------
     // 4) Initialize GameObjects
     // ----------------------------------------------------
-
 }
 
 void RenderWindow::RenderSceneToFBO()
 {
-
-    
 
     m_RotationAngle += 0.001f; // spin per frame
 
@@ -319,27 +390,21 @@ void RenderWindow::RenderSceneToFBO()
 
     // Iterate over each GameObject and render it
 
-
     for (auto &obj : g_GameObjects)
-    {   
+    {
 
         // -----------------------------------
         // 1) Build MVP from transform
         // -----------------------------------
         glm::mat4 model = glm::mat4(1.f);
 
-
         std::shared_ptr<TransformComponent> transform = obj->GetComponent<TransformComponent>();
-
-
 
         std::shared_ptr<MeshComponent> mesh = obj->GetComponent<MeshComponent>();
 
-
-
         if (transform && mesh)
         {
-            
+
             // Translate
 
             g_GPU_Triangles_drawn_to_screen += static_cast<int>(mesh->indexCount);
@@ -348,15 +413,13 @@ void RenderWindow::RenderSceneToFBO()
 
             // Rotate around X, Y, Z
 
-            //transform->rotation.x += m_RotationAngle;
+            // transform->rotation.x += m_RotationAngle;
             model = glm::rotate(model, glm::radians(transform->rotation.x), glm::vec3(1.f, 0.f, 0.f));
             model = glm::rotate(model, glm::radians(transform->rotation.y), glm::vec3(0.f, 1.f, 0.f));
             model = glm::rotate(model, glm::radians(transform->rotation.z), glm::vec3(0.f, 0.f, 1.f));
 
             // Scale
             model = glm::scale(model, transform->scale);
-
-
 
             // Compute MVP
             glm::mat4 mvp = proj * view * model;

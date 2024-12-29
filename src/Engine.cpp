@@ -22,6 +22,9 @@
 #include "Windows/InspectorWindow.h"
 #include "Windows/SceneWindow.h"
 
+#include "Windows/ProfilerWindow.h"
+
+
 
 // Create an instance
 
@@ -30,6 +33,10 @@
 #include "Engine/ThemeManager.h"
 #include "Engine/SceneManager.h"
 #include "Engine/LuaAPI.h"
+#include "Engine/Utilitys.h"
+
+#include "Engine/ScopedTimer.h"
+#include "Engine/Profiler.h"
 
 // #define YAML_CPP_STATIC_DEFINE
 #include <yaml-cpp/yaml.h>
@@ -42,16 +49,13 @@ LoggerWindow *g_LoggerWindow;
 
 SceneManager g_SceneManager;
 
-
 std::vector<std::shared_ptr<GameObject>> g_GameObjects;
 
 int g_GPU_Triangles_drawn_to_screen = 0;
 
 GameObject *g_SelectedObject; // Pointer to the currently selected object
 
-
-
-
+int m_GameRunning = 0;
 
 bool MyEngine::Init(int width, int height, const std::string &title)
 {
@@ -116,7 +120,10 @@ bool MyEngine::Init(int width, int height, const std::string &title)
     m_InspectorWindow = std::make_unique<InspectorWindow>();
     m_SceneWindow = std::make_unique<SceneWindow>();
     m_luaEditor = std::make_unique<LuaEditorWindow>();
+    m_profilerWindow = std::make_unique<ProfilerWindow>();
 
+    m_GameRunning = false;
+    m_FirstTickGameRunning = true;
 
     g_LoggerWindow = m_LoggerWindow.get();
 
@@ -160,7 +167,7 @@ void MyEngine::Run()
     if (mesh)
     {
         // printf("Got Valid Mesh Component\n");
-        Model * model = g_AssetManager.loadAsset<Model *>(AssetType::MODEL, "assets/models/DefaultCube.obj");
+        Model *model = g_AssetManager.loadAsset<Model *>(AssetType::MODEL, "assets/models/DefaultMesh.obj");
         mesh->vao = model->vao;
         mesh->indexCount = model->indices.size();
         mesh->textureID = g_AssetManager.loadAsset<GLuint>(AssetType::TEXTURE, "assets/textures/wood.png");
@@ -189,7 +196,6 @@ void MyEngine::Run()
     g_AssetManager.loadAsset<GLuint>(AssetType::TEXTURE, "assets/textures/lush_grass.png");
     g_AssetManager.loadAsset<GLuint>(AssetType::TEXTURE, "assets/textures/vegetation_tree_bark_40.png");
     g_AssetManager.loadAsset<GLuint>(AssetType::TEXTURE, "assets/textures/ak-47.jpg");
-
 
     g_AssetManager.loadAsset<GLuint>(AssetType::TEXTURE, "assets/textures/sky.png");
 
@@ -223,8 +229,13 @@ void MyEngine::Run()
 
     while (!glfwWindowShouldClose(m_Window) && m_Running)
     {
+        ScopedTimer frameTimer("MainLoop"); // Optional: Profile the entire loop
+
         // Poll events
-        glfwPollEvents();
+        {
+            ScopedTimer timer("glfwPollEvents");
+            glfwPollEvents();
+        }
 
         // Calculate current time
         double current_time = glfwGetTime();
@@ -251,43 +262,75 @@ void MyEngine::Run()
         // Start new frame
         BeginFrame();
 
+        if (m_FirstTickGameRunning && m_GameRunning)
+        {
+            ScopedTimer timer("SaveScene");
+            m_FirstTickGameRunning = false;
+
+            std::string savePath = createTempFolder().string() + "TesseractEngineTempScene.scene";
+            DEBUG_PRINT("Save path: %s", savePath.c_str());
+            g_SceneManager.SaveScene(g_GameObjects, savePath);
+        }
+
+        if (!m_FirstTickGameRunning && !m_GameRunning)
+        {
+            ScopedTimer timer("LoadScene");
+            m_FirstTickGameRunning = true;
+
+            std::string loadPath = createTempFolder().string() + "TesseractEngineTempScene.scene";
+
+            DEBUG_PRINT("Load path: %s", loadPath.c_str());
+
+            g_SceneManager.LoadScene(g_GameObjects, loadPath);
+        }
+
         // Show main DockSpace
         ShowDockSpace();
 
-        m_InspectorWindow->Show();
-
-        if (1)
+        if (m_GameRunning)
         {
+            ScopedTimer timer("UpdateGameObjects");
             for (auto &Gameobject : g_GameObjects)
             {
 
-                // Handle Componenets That require Updates
-
+                // Handle Components That Require Updates
                 std::shared_ptr<ScriptComponent> script = Gameobject->GetComponent<ScriptComponent>();
                 if (script)
-                { // Stupid Null Checks
+                { // Null Checks
+                    ScopedTimer timer("GameObjectLuaCall: "+Gameobject->name);
+
                     script->Update(frame_delta);
                 }
             }
         }
 
-        // Pass per-frame delta time to Lua
+        // Render and show various windows
+        {
+            ScopedTimer timer("RenderGame");
+            
+            m_RenderWindow->Show(&m_GameRunning);   // The spinning triangle as ImGui::Image
 
-        m_RenderWindow->Show(); // The spinning triangle as ImGui::Image
+        }
+        {
+            ScopedTimer timer("ShowEditor");
 
-        m_PerformanceWindow->Show(m_Fps, m_Ms); // FPS & ms
+            m_InspectorWindow->Show();
+            m_PerformanceWindow->Show(m_Fps, m_Ms); // FPS & ms
+            m_LoggerWindow->Show();                 // Logs
+            m_SceneWindow->Show();
+            m_luaEditor->Show();
 
-        m_LoggerWindow->Show(); // Logs
-
-        m_SceneWindow->Show();
-
-        m_luaEditor->Show();
+            m_profilerWindow->Show();
+        }
 
         // After rendering
         m_PerformanceWindow->UpdatePerformanceStats(-1, g_GPU_Triangles_drawn_to_screen);
 
         // End frame
         EndFrame();
+
+        // Mark the end of frame for profiling
+        Profiler::Get().EndFrame();
     }
 
     DEBUG_PRINT("[OK] Engine Run ");
@@ -398,6 +441,17 @@ void MyEngine::ShowDockSpace()
             }
             ImGui::EndMenu();
         }
+
+        if (ImGui::BeginMenu("Engine"))
+        {
+
+            if (ImGui::MenuItem(m_GameRunning ? "Stop" : "Start"))
+            {
+                m_GameRunning = !m_GameRunning; // Stop the engine
+            }
+            ImGui::EndMenu();
+        }
+
         ImGui::EndMenuBar();
     }
 

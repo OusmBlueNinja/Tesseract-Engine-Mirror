@@ -142,6 +142,7 @@ bool LuaManager::Initialize(const std::string &scriptPath)
 // Update function called every frame
 void LuaManager::Update(float deltaTime)
 {
+
     if (!m_LuaState)
     {
         if (g_LoggerWindow)

@@ -36,7 +36,7 @@ void LuaEditorWindow::Show() {
         return;
     }
 
-    ImGui::Begin("Lua Text Editor");
+    ImGui::Begin("Lua Text Editor##LuaEditor");
 
     // Toolbar buttons
     if (ImGui::Button("Save")) {

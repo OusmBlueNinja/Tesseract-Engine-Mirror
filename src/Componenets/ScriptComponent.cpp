@@ -14,8 +14,9 @@ const std::string ScriptComponent::name = "ScriptComponent";
 
 
 ScriptComponent::ScriptComponent()
-    : ScriptPath(""), m_LastErrorMessage("")
+    : ScriptPath("assets/scripts/script.lua"), m_LastErrorMessage("")
 {
+
     Initialize();
 }
 

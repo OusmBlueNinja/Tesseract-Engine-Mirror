@@ -1,6 +1,7 @@
 // src/Engine.h
 
 #pragma once
+
 #include <string>
 #include <memory>
 #include "Windows/RenderWindow.h"
@@ -9,6 +10,7 @@
 #include "Windows/InspectorWindow.h"
 #include "Windows/SceneWindow.h"
 #include "Windows/LuaEditorWindow.h"
+#include "Windows/ProfilerWindow.h"
 
 #include "Componenets/GameObject.h"
 #include "Componenets/Mesh.h"
@@ -18,6 +20,7 @@
 #include "Engine/ThemeManager.h"
 #include "Engine/SceneManager.h"
 #include "Engine/LuaAPI.h"
+#include "Engine/Utilitys.h"
 
 #include "TestModel.h"
 
@@ -43,6 +46,9 @@ private:
 private:
     GLFWwindow *m_Window = nullptr;
     bool m_Running = false;
+    bool m_GameRunning = false;
+
+    bool m_FirstTickGameRunning = true;
 
     // Windows
     std::unique_ptr<RenderWindow> m_RenderWindow;
@@ -51,6 +57,8 @@ private:
     std::unique_ptr<InspectorWindow> m_InspectorWindow;
     std::unique_ptr<SceneWindow> m_SceneWindow;
     std::unique_ptr<LuaEditorWindow> m_luaEditor;
+
+    std::unique_ptr<ProfilerWindow> m_profilerWindow;
 
     double m_LastFrameTime = 0.0; // Initialize with the current time
     double m_TimeAccumulator = 0.0;

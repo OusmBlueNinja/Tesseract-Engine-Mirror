@@ -33,7 +33,7 @@ void LoggerWindow::AddLog(const char* fmt, std::optional<ImVec4> color, ...) {
 }
 
 void LoggerWindow::Show() {
-    ImGui::Begin("Logger");
+    ImGui::Begin("Logger##logger");
 
     if (ImGui::Button("Clear")) {
         m_Logs.clear();

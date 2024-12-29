@@ -27,6 +27,7 @@ std::string GameObject::GetName() const
 
 void GameObject::AddComponent(const std::shared_ptr<Component> &component)
 {
+    component->SetOwner(this);
     components[component->GetName()] = component;
     // std::cout << "Added " << component->GetName() << std::endl;
 }
