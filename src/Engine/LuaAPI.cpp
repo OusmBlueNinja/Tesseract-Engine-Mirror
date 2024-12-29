@@ -78,10 +78,10 @@ bool LuaManager::Initialize(const std::string &scriptPath)
 
     // Create the Engine table
     lua_newtable(m_LuaState);
-    lua_setglobal(m_LuaState, "Engine");
+    lua_setglobal(m_LuaState, "_T_Engine_Table");
 
     // Bind the Log function to the Engine table
-    lua_getglobal(m_LuaState, "Engine");
+    lua_getglobal(m_LuaState, "_T_Engine_Table");
     lua_pushcfunction(m_LuaState, Lua_Engine_Log);
     lua_setfield(m_LuaState, -2, "Log");
 

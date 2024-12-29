@@ -1,5 +1,7 @@
 -- script.lua
-local Math = require("math")
+
+local Math = require("./assets/scripts/math")
+local Engine = require("./assets/scripts/engine")
 
 local itterator = 0
 local ticks = 0

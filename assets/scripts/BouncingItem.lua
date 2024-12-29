@@ -1,5 +1,7 @@
 -- script.lua
-local Math = require("math") -- Require the enhanced math module
+local Math = require("./assets/scripts/math") -- Require the enhanced math module
+local Engine = require("./assets/scripts/engine")
+
 
 -- Variables to track elapsed time and rotation
 local elapsedTime = 0
@@ -15,7 +17,8 @@ local bobFrequency = 0.5 -- Frequency of the bobbing (oscillations per second)
 local gun = nil
 local transform = nil
 
-local TAU = 6.283185307179586
+local TAU = Math.constants.TAU
+
 
 
 -- Update function called every frame
