@@ -30,6 +30,25 @@ std::vector<float> ProfilerWindow::MovingAverage(const std::deque<double>& data,
     return averages;
 }
 
+std::vector<float> ProfilerWindow::ExponentialMovingAverage(const std::deque<double>& data, float alpha)
+{
+    std::vector<float> smoothedData;
+    if (data.empty())
+        return smoothedData;
+
+    float ema = static_cast<float>(data[0]); // Initialize EMA with the first value
+    smoothedData.push_back(ema);
+
+    for (size_t i = 1; i < data.size(); ++i)
+    {
+        ema = alpha * static_cast<float>(data[i]) + (1 - alpha) * ema;
+        smoothedData.push_back(ema);
+    }
+
+    return smoothedData;
+}
+
+
 // Update the history data structures with the latest profiling data
 void ProfilerWindow::UpdateHistory(const std::unordered_map<std::string, ProfileResult>& data, double totalFrameTime)
 {
@@ -104,7 +123,7 @@ void ProfilerWindow::Show()
     RenderTable(data);
 
     // Render profiling graphs
-    RenderGraphs();
+    //RenderGraphs();
 
     // Display total frame time (from the last update)
     if (!m_TotalFrameTimeHistory.empty())
@@ -192,61 +211,87 @@ void ProfilerWindow::RenderTable(const std::unordered_map<std::string, ProfileRe
     }
 }
 
-// Render the profiling graphs
+
+
+
 void ProfilerWindow::RenderGraphs()
 {
     ImGui::Separator();
-    ImGui::Text("Profiling Graphs");
-
-    // Example: Render a bar graph for the top 5 functions by total time
-    std::vector<std::pair<std::string, ProfileResult>> sortedData;
+    ImGui::Text("Profiling Graphs (Unified Multi-Line Plot)");
 
     const auto& data = Profiler::Get().GetLastFrameData();
+    std::vector<std::pair<std::string, ProfileResult>> sortedData;
+
+    // Collect and sort functions by total time used
     for (const auto& [name, result] : data)
     {
         sortedData.emplace_back(name, result);
     }
 
-    // Sort and take top 5
     std::sort(sortedData.begin(), sortedData.end(),
-        [](const std::pair<std::string, ProfileResult>& a, const std::pair<std::string, ProfileResult>& b) -> bool {
-            return a.second.TotalTime > b.second.TotalTime;
-        });
+              [](const std::pair<std::string, ProfileResult>& a, const std::pair<std::string, ProfileResult>& b) -> bool {
+                  return a.second.TotalTime > b.second.TotalTime;
+              });
 
-    size_t displayCount = std::min<size_t>(5, sortedData.size());
+    size_t displayCount = std::min<size_t>(5, sortedData.size()); // Limit to top 5 functions
 
+    // Prepare data for the unified plot
+    std::vector<std::vector<float>> plotData(displayCount);
+    std::vector<std::string> functionNames;
+
+    float alpha = 0.2f; // Smoothing factor for EMA
     for (size_t i = 0; i < displayCount; ++i)
     {
         const auto& [name, result] = sortedData[i];
-        double percentage = 0.0;
+        functionNames.push_back(name);
 
-        if (!m_TotalFrameTimeHistory.empty())
-        {
-            // Prevent division by zero
-            double lastTotalFrameTime = m_TotalFrameTimeHistory.back();
-            if (lastTotalFrameTime > 0.0)
-            {
-                percentage = (result.TotalTime / lastTotalFrameTime) * 100.0;
-            }
-        }
-
-        ImGui::PushID(static_cast<int>(i));
-        ImGui::Text("%s", name.c_str());
-        ImGui::SameLine();
-        ImGui::ProgressBar(static_cast<float>(percentage / 100.0f), ImVec2(-1.0f, 0.0f),
-                           (std::to_string(percentage) + "%").c_str());
-        ImGui::PopID();
+        // Smooth each function's data using EMA
+        const auto& history = m_ProfileHistories[name];
+        plotData[i] = ExponentialMovingAverage(history.totalTimeHistory, alpha);
     }
 
-    // Example: Render a line plot for total frame time with moving average
-    if (!m_TotalFrameTimeHistory.empty())
+    // Find the longest data series and the maximum value for normalization
+    size_t maxHistorySize = 0;
+    float maxValue = 0.0f;
+    for (const auto& series : plotData)
     {
-        ImGui::Text("Frame Time Over Last %zu Frames (Smoothed)", m_TotalFrameTimeHistory.size());
+        if (!series.empty())
+        {
+            maxHistorySize = std::max(maxHistorySize, series.size());
+            maxValue = std::max(maxValue, *std::max_element(series.begin(), series.end()));
+        }
+    }
 
-        // Calculate moving average with a window of 10 frames
-        size_t windowSize = 10;
-        std::vector<float> smoothedFrameTimes = MovingAverage(m_TotalFrameTimeHistory, windowSize);
+    // Prepare the combined graph
+    if (maxHistorySize > 0)
+    {
+        std::vector<float> combinedGraph(maxHistorySize, 0.0f);
 
-        ImGui::PlotLines("##FrameTimeSmoothed", smoothedFrameTimes.data(), static_cast<int>(smoothedFrameTimes.size()), 0, NULL, 0.0f, 1000.0f, ImVec2(0, 80));
+        // Render a single unified graph with multi-line data
+        ImVec2 graphSize = ImVec2(0, 200); // Graph dimensions
+
+        ImGui::PlotLines(
+            "##UnifiedGraph",
+            [](void* data, int idx) -> float {
+                auto* plotData = static_cast<std::vector<std::vector<float>>*>(data);
+                float value = 0.0f;
+
+                for (const auto& series : *plotData)
+                {
+                    if (idx < series.size())
+                        value += series[idx];
+                }
+
+                return value;
+            },
+            static_cast<void*>(&plotData), static_cast<int>(maxHistorySize), 0, nullptr, 0.0f, maxValue, graphSize);
+
+        // Add a legend for the lines
+        ImGui::Separator();
+        for (size_t i = 0; i < functionNames.size(); ++i)
+        {
+            ImVec4 lineColor = ImVec4(0.2f + 0.2f * i, 0.2f, 1.0f - 0.2f * i, 1.0f);
+            ImGui::TextColored(lineColor, "%s", functionNames[i].c_str());
+        }
     }
 }

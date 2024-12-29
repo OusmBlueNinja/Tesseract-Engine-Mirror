@@ -24,8 +24,6 @@
 
 #include "Windows/ProfilerWindow.h"
 
-
-
 // Create an instance
 
 // In your rendering loop
@@ -124,6 +122,7 @@ bool MyEngine::Init(int width, int height, const std::string &title)
 
     m_GameRunning = false;
     m_FirstTickGameRunning = true;
+    m_showProfiler = false;
 
     g_LoggerWindow = m_LoggerWindow.get();
 
@@ -229,7 +228,6 @@ void MyEngine::Run()
 
     while (!glfwWindowShouldClose(m_Window) && m_Running)
     {
-        ScopedTimer frameTimer("MainLoop"); // Optional: Profile the entire loop
 
         // Poll events
         {
@@ -297,7 +295,7 @@ void MyEngine::Run()
                 std::shared_ptr<ScriptComponent> script = Gameobject->GetComponent<ScriptComponent>();
                 if (script)
                 { // Null Checks
-                    ScopedTimer timer("GameObjectLuaCall: "+Gameobject->name);
+                    ScopedTimer timer("GameObjectLuaCall: " + Gameobject->name);
 
                     script->Update(frame_delta);
                 }
@@ -307,9 +305,8 @@ void MyEngine::Run()
         // Render and show various windows
         {
             ScopedTimer timer("RenderGame");
-            
-            m_RenderWindow->Show(&m_GameRunning);   // The spinning triangle as ImGui::Image
 
+            m_RenderWindow->Show(&m_GameRunning); // The spinning triangle as ImGui::Image
         }
         {
             ScopedTimer timer("ShowEditor");
@@ -320,7 +317,10 @@ void MyEngine::Run()
             m_SceneWindow->Show();
             m_luaEditor->Show();
 
-            m_profilerWindow->Show();
+            if (m_showProfiler)
+            {
+                m_profilerWindow->Show();
+            }
         }
 
         // After rendering
@@ -441,7 +441,11 @@ void MyEngine::ShowDockSpace()
             }
             ImGui::EndMenu();
         }
-
+        if (ImGui::BeginMenu("Tools"))
+        {
+            ImGui::Checkbox("Show Profiler", &m_showProfiler); // Add a checkbox to toggle the profiler
+            ImGui::EndMenu();
+        }
         if (ImGui::BeginMenu("Engine"))
         {
 
@@ -449,6 +453,7 @@ void MyEngine::ShowDockSpace()
             {
                 m_GameRunning = !m_GameRunning; // Stop the engine
             }
+
             ImGui::EndMenu();
         }
 

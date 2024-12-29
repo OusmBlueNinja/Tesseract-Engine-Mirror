@@ -33,10 +33,11 @@ private:
     std::chrono::steady_clock::time_point m_LastUpdateTime;
 
     // Helper functions
-    void UpdateHistory(const std::unordered_map<std::string, ProfileResult>& data, double totalFrameTime);
-    void RenderTable(const std::unordered_map<std::string, ProfileResult>& data);
+    void UpdateHistory(const std::unordered_map<std::string, ProfileResult> &data, double totalFrameTime);
+    void RenderTable(const std::unordered_map<std::string, ProfileResult> &data);
     void RenderGraphs();
 
     // Helper for data smoothing
-    std::vector<float> MovingAverage(const std::deque<double>& data, size_t window);
+    std::vector<float> MovingAverage(const std::deque<double> &data, size_t window);
+    std::vector<float> ExponentialMovingAverage(const std::deque<double> &data, float alpha);
 };

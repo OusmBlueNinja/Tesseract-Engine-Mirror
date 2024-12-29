@@ -49,6 +49,7 @@ private:
     bool m_GameRunning = false;
 
     bool m_FirstTickGameRunning = true;
+    bool m_showProfiler = false;
 
     // Windows
     std::unique_ptr<RenderWindow> m_RenderWindow;
