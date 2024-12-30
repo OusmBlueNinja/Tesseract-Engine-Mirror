@@ -55,6 +55,10 @@ public:
      */
     void Update(float deltaTime);
 
+    void CallLuaFunction(std::string functionName);
+
+
+
 private:
     // Lua state
     std::string ScriptPath;

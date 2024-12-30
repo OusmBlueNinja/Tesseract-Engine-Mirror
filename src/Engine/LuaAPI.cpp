@@ -220,6 +220,76 @@ void LuaManager::Update(float deltaTime)
     }
 }
 
+// Update function called every frame
+void LuaManager::CallLuaFunction(std::string functionName)
+{
+
+    if (!m_LuaState)
+    {
+        if (g_LoggerWindow)
+        {
+            g_LoggerWindow->AddLog("LuaManager: Lua state is not initialized.", std::optional<ImVec4>(ImVec4(1.0f, 0.0f, 0.0f, 1.0f)));
+        }
+        else
+        {
+            DEBUG_PRINT("LuaManager: Lua state is not initialized.");
+        }
+        return;
+    }
+
+    // Push the 'OnUpdate' function onto the stack
+    lua_getglobal(m_LuaState, functionName.c_str());
+    if (!lua_isfunction(m_LuaState, -1))
+    {
+        DEBUG_PRINT("LuaManager: 'OnUpdate' is not a function.");
+        return;
+    }
+
+    // Call the function with 0 argument and 0 return values
+    if (lua_pcall(m_LuaState, 0, 0, 0) != LUA_OK)
+    {
+        const char *luaError = lua_tostring(m_LuaState, -1);
+        if (luaError)
+        {
+            std::string errorMsg(luaError);
+            // Prevent duplicate error logs
+            if (errorMsg != m_LastErrorMessage)
+            {
+                if (g_LoggerWindow)
+                {
+                    std::string formattedError = "LuaManager Error in " + functionName + ": " + errorMsg;
+                    ImVec4 redColor = ImVec4(1.0f, 0.0f, 0.0f, 1.0f);
+                    g_LoggerWindow->AddLog(formattedError.c_str(), std::optional<ImVec4>(redColor));
+                }
+                else
+                {
+                    DEBUG_PRINT("LuaManager Error in OnUpdate: %s", errorMsg.c_str());
+                }
+                m_LastErrorMessage = errorMsg;
+            }
+        }
+        else
+        {
+            if (g_LoggerWindow)
+            {
+                g_LoggerWindow->AddLog("LuaManager: Unknown error in %s.", std::optional<ImVec4>(ImVec4(1.0f, 0.0f, 0.0f, 1.0f)), functionName.c_str());
+            }
+            else
+            {
+                DEBUG_PRINT("LuaManager: Unknown error in %s.", functionName.c_str());
+            }
+        }
+
+        lua_pop(m_LuaState, 1); // Remove error message from stack
+        return;
+    }
+    else
+    {
+        // Reset last error message on successful call
+        m_LastErrorMessage.clear();
+    }
+}
+
 // Binding function to log messages from Lua
 int LuaManager::Lua_Engine_Log(lua_State *L)
 {
@@ -322,7 +392,6 @@ int LuaManager::Lua_GetGameObjectByTag(lua_State *L)
     return 1; // Return the GameObject userdata
 }
 
-
 // Binding function to retrieve a Component by name from a GameObject
 int LuaManager::Lua_GameObject_GetComponent(lua_State *L)
 {
@@ -353,7 +422,6 @@ int LuaManager::Lua_GameObject_GetComponent(lua_State *L)
         lua_pushnil(L); // Return nil if component not found
         return 1;
     }
-
 
     // Determine which metatable to use based on the component type
     if (strcmp(componentNameStr, "Transform") == 0)
@@ -399,7 +467,6 @@ int LuaManager::Lua_GameObject_GetComponent(lua_State *L)
 
     // Set the metatable for the userdata
     lua_setmetatable(L, -2);
-
 
     return 1; // Return the Component userdata
 }
@@ -518,7 +585,6 @@ int LuaManager::Lua_TransformComponent_GetRotation(lua_State *L)
     return 1; // Return the position table
 }
 
-
 // Binding function to set a TransformComponent's position
 int LuaManager::Lua_TransformComponent_SetRotation(lua_State *L)
 {
@@ -561,31 +627,7 @@ int LuaManager::Lua_TransformComponent_SetRotation(lua_State *L)
     return 0; // No return values
 }
 
-// Binding function to retrieve a MeshComponent's mesh data
-int LuaManager::Lua_MeshComponent_GetMeshData(lua_State *L)
-{
-    // Ensure the first argument is a userdata with MeshComponentMetaTable
-    MeshComponent **udata = (MeshComponent **)luaL_checkudata(L, 1, "MeshComponentMetaTable");
-    if (udata == nullptr || *udata == nullptr)
-    {
-        lua_pushstring(L, "Invalid MeshComponent.");
-        lua_error(L);
-        return 0;
-    }
 
-    // Example: Push mesh data as a table
-    // Ensure MeshData is defined appropriately in MeshComponent
-    GLuint ID = (*udata)->textureID; // Assume MeshData is a struct with relevant fields
-
-    lua_newtable(L);
-    lua_pushnumber(L, ID);
-    lua_setfield(L, -2, "vertexData");
-    // lua_pushstring(L, ID.indexData.c_str());
-    // lua_setfield(L, -2, "indexData");
-    //  Add more mesh data fields as needed
-
-    return 1; // Return the mesh data table
-}
 
 // Binding function to retrieve a ScriptComponent's script path
 int LuaManager::Lua_ScriptComponent_GetScriptPath(lua_State *L)
@@ -699,10 +741,6 @@ void LuaManager::RegisterMeshComponentMetaTable()
     // Inherit from ComponentMetaTable
     luaL_getmetatable(m_LuaState, "ComponentMetaTable");
     lua_setfield(m_LuaState, -2, "__base");
-
-    // Add methods specific to MeshComponent
-    lua_pushcfunction(m_LuaState, Lua_MeshComponent_GetMeshData);
-    lua_setfield(m_LuaState, -2, "GetMeshData");
 
     // Add more Mesh-specific methods as needed
 

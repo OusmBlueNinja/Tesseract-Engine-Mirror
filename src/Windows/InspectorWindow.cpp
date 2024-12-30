@@ -8,6 +8,7 @@
 
 extern std::vector<GameObject> g_GameObjects;
 extern GameObject *g_SelectedObject; // Pointer to the currently selected object
+extern std::shared_ptr<CameraComponent> g_RuntimeCameraObject;
 
 extern LoggerWindow *g_LoggerWindow;
 
@@ -72,7 +73,6 @@ void InspectorWindow::Show()
             // ===========================
             // 2) ADD COMPONENT SECTION
             // ===========================
-
 
             ImGui::Text("Add Component:");
             ImGui::SameLine();
@@ -154,7 +154,6 @@ void InspectorWindow::Show()
 
             ImGui::Separator();
 
-
             // ===========================
             // 1) TRANSFORM
             // ===========================
@@ -162,6 +161,7 @@ void InspectorWindow::Show()
             std::shared_ptr<TransformComponent> transform = g_SelectedObject->GetComponent<TransformComponent>();
             std::shared_ptr<MeshComponent> mesh = g_SelectedObject->GetComponent<MeshComponent>();
             std::shared_ptr<ScriptComponent> script = g_SelectedObject->GetComponent<ScriptComponent>();
+            std::shared_ptr<CameraComponent> camera = g_SelectedObject->GetComponent<CameraComponent>();
 
             // Color the Transform header
 
@@ -376,52 +376,292 @@ void InspectorWindow::Show()
                 }
             }
 
+            if (camera)
+            {
+                // Styling: Set text color to white for the header
+                ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
+
+                // Create a collapsing header for the Camera component
+                bool cameraOpen = ImGui::CollapsingHeader("Camera##CamerInspector", ImGuiTreeNodeFlags_DefaultOpen);
+                ImGui::PopStyleColor(); // Revert text color
+
+                if (cameraOpen)
+                {
+
+                    // Edit Field of View (FOV)
+                    if (ImGui::InputFloat("Field of View°", &camera->FOV, 1.0f, 10.0f, "%.1f"))
+                    {
+                        // Optionally, validate or clamp FOV values
+                        if (camera->FOV < 1.0f)
+                            camera->FOV = 1.0f;
+                        if (camera->FOV > 179.0f)
+                            camera->FOV = 179.0f;
+                    }
+
+                    // Edit Near Plane
+                    if (ImGui::InputFloat("Near Plane", &camera->NearPlane, 0.1f, 1.0f, "%.2f"))
+                    {
+                        // Clamp Near Plane to a minimum value to prevent rendering issues
+                        if (camera->NearPlane < 0.1f)
+                            camera->NearPlane = 0.1f;
+
+                        // Ensure Near Plane is always less than Far Plane
+                        if (camera->NearPlane >= camera->FarPlane)
+                            camera->NearPlane = camera->FarPlane - 0.1f;
+                    }
+
+                    // Edit Far Plane
+                    if (ImGui::InputFloat("Far Plane", &camera->FarPlane, 10.0f, 100.0f, "%.2f"))
+                    {
+                        // Clamp Far Plane to a minimum value greater than Near Plane
+                        if (camera->FarPlane <= camera->NearPlane)
+                            camera->FarPlane = camera->NearPlane + 0.1f;
+                    }
+
+                    // Edit Aspect Ratio
+                    if (ImGui::InputFloat("Aspect Ratio", &camera->AspectRatio, 0.01f, 0.1f, "%.2f"))
+                    {
+                        // Optionally, validate or clamp Aspect Ratio values
+                        if (camera->AspectRatio <= 0.0f)
+                            camera->AspectRatio = 1.77f; // Default to 16:9
+                    }
+
+                    // *** Begin Changed Code ***
+
+                    // Replace the "Orthographic" Checkbox with a "Perspective" Switch
+
+                    // Determine if the current camera is in perspective mode
+                    bool isPerspective = camera->IsPerspective;
+
+                    // Render the switch (styled checkbox to resemble a switch)
+                    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(4, 2));
+                    if (ImGui::Checkbox("Perspective", &isPerspective))
+                    {
+                        camera->IsPerspective = isPerspective;
+
+                        if (isPerspective)
+                        {
+                            // Set to Perspective Projection
+                            // Use existing camera properties or set to default values
+                            camera->SetPerspective(camera->FOV, camera->AspectRatio, camera->NearPlane, camera->FarPlane);
+                        }
+                        else
+                        {
+                            // Set to Orthographic Projection
+                            // Define orthographic boundaries based on current aspect ratio or set to default values
+                            float orthoLeft = -camera->AspectRatio;
+                            float orthoRight = camera->AspectRatio;
+                            float orthoBottom = -1.0f;
+                            float orthoTop = 1.0f;
+                            camera->SetOrthographic(orthoLeft, orthoRight, orthoBottom, orthoTop, camera->NearPlane, camera->FarPlane);
+                        }
+
+                        // Update the global primary camera if needed
+                        g_RuntimeCameraObject = camera;
+
+                        // Log the projection mode change
+                        std::string projectionMode = isPerspective ? "Perspective" : "Orthographic";
+                        g_LoggerWindow->AddLog("Changed Projection Mode to %s for Camera: %s",
+                                               ImVec4(0.0f, 1.0f, 0.0f, 1.0f),
+                                               projectionMode.c_str(),
+                                               g_SelectedObject->name.c_str());
+                    }
+                    ImGui::PopStyleVar();
+
+                    // Optional: Add a tooltip for the Perspective switch
+                    if (ImGui::IsItemHovered())
+                    {
+                        ImGui::BeginTooltip();
+                        ImGui::Text("Toggle between Perspective and Orthographic projection modes.");
+                        ImGui::EndTooltip();
+                    }
+
+                    // *** End Changed Code ***
+
+                    // Add more camera properties here as needed
+
+                    ImGui::Spacing();
+
+                    // Replace the "Set as Primary" Button with a Checkbox
+
+                    // Determine if the current camera is the primary camera
+                    bool isPrimary = (g_RuntimeCameraObject == camera);
+
+                    // Render the Checkbox
+                    if (ImGui::Checkbox("Primary", &isPrimary))
+                    {
+                        if (isPrimary)
+                        {
+                            // Assign the current camera as the primary camera
+                            g_RuntimeCameraObject = camera;
+                            camera->DefaultRuntimeCamera = true;
+
+                            // unset other cameras' DefaultRuntimeCamera flags
+                            //! Not used because I don't want to
+                            /*
+                            for (auto& [name, cam] : allCameras)
+                            {
+                                if (cam != camera)
+                                    cam->DefaultRuntimeCamera = false;
+                            }
+                            */
+
+                            // Log the event
+                            g_LoggerWindow->AddLog("Set Primary Camera: %s", ImVec4(0.0f, 1.0f, 0.0f, 1.0f), g_SelectedObject->name.c_str());
+                        }
+                        else
+                        {
+                            // If unchecked and this camera was the primary, unset it
+                            if (g_RuntimeCameraObject == camera)
+                                g_RuntimeCameraObject.reset(); // Assuming SharedPtr has a reset method
+
+                            camera->DefaultRuntimeCamera = false;
+
+                            // Log the event
+                            g_LoggerWindow->AddLog("Unset Primary Camera: %s", ImVec4(1.0f, 0.0f, 0.0f, 1.0f), g_SelectedObject->name.c_str());
+                        }
+                    }
+
+                    //// Optional: Indicate if this camera is currently the primary camera
+                    // if (g_RuntimeCameraObject == camera)
+                    //{
+                    //     ImGui::SameLine();
+                    //     ImGui::TextColored(ImVec4(0.0f, 1.0f, 0.0f, 1.0f), "(Primary)");
+                    // }
+                }
+            }
+
+            // Inside your RenderWindow.cpp or the relevant ImGui rendering function
+
             if (mesh && g_SelectedObject)
             {
-
-                // Transform* transform = &g_SelectedObject->transform;
-
                 ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
                 bool meshOpen = ImGui::CollapsingHeader("Mesh##Main", ImGuiTreeNodeFlags_DefaultOpen);
                 ImGui::PopStyleColor();
-                // printf("%p\n", &transform);
+
                 if (meshOpen)
                 {
-
+                    // --- VAO ---
                     int vao = static_cast<int>(mesh->vao);
-                    if (ImGui::InputInt("vao", &vao, 1, 0))
+                    if (ImGui::InputInt("VAO", &vao, 1, 0))
                     {
                         mesh->vao = static_cast<GLuint>(vao);
                     }
 
+                    // --- Index Count ---
                     int indexCount = static_cast<int>(mesh->indexCount);
-                    if (ImGui::InputInt("indexCount", &indexCount, 1, 0))
+                    if (ImGui::InputInt("Index Count", &indexCount, 1, 0))
                     {
                         mesh->indexCount = static_cast<GLuint>(indexCount);
                     }
 
-                    int textureID = static_cast<int>(mesh->textureID);
-                    if (ImGui::InputInt("textureID", &textureID, 1, 0))
-                    {
-                        mesh->textureID = static_cast<GLuint>(textureID);
-                    }
-                    //    Define a maximum buffer size
+                    // --- Mesh Path ---
                     const size_t BUFFER_SIZE = 256;
-                    // Allocate a buffer and initialize it with the current string
                     char buffer[BUFFER_SIZE];
                     strncpy(buffer, mesh->MeshPath.c_str(), BUFFER_SIZE - 1);
                     buffer[BUFFER_SIZE - 1] = '\0'; // Ensure null-termination
-                    // Render the InputText widget
-                    if (ImGui::InputText(mesh->MeshPath.c_str(), buffer, BUFFER_SIZE))
+
+                    if (ImGui::InputText("Mesh Path", buffer, BUFFER_SIZE))
                     {
-                        // Update the string if user made changes
                         mesh->MeshPath = buffer;
+                        // Optionally, trigger reloading the mesh if the path changes
+                        // e.g., g_AssetManager.loadAsset<Model *>(AssetType::MODEL, mesh->MeshPath.c_str());
                     }
+
+                    // --- Textures ---
+                    ImGui::Separator();
+                    ImGui::Text("Textures:");
+
+                    // Display list of textures
                     float availableWidth = ImGui::GetContentRegionAvail().x;
 
-                    ImGui::Image(mesh->textureID, ImVec2(availableWidth, availableWidth), ImVec2(0, 0), ImVec2(1, 1));
+                    for (size_t i = 0; i < mesh->textures.size(); ++i)
+                    {
+                        Texture &texture = mesh->textures[i];
+
+                        // Create a unique identifier for each texture section
+                        std::string header = "Texture " + std::to_string(i + 1) + "##" + std::to_string(i);
+
+
+                        // Collapsing header for each texture
+                        if (ImGui::CollapsingHeader(header.c_str(), ImGuiTreeNodeFlags_DefaultOpen))
+                        {
+                            // --- Texture Type ---
+                            char typeBuffer[32];
+                            strncpy(typeBuffer, texture.type.c_str(), sizeof(typeBuffer) - 1);
+                            typeBuffer[sizeof(typeBuffer) - 1] = '\0';
+
+                            if (ImGui::InputText(("Type##" + std::to_string(i)).c_str(), typeBuffer, sizeof(typeBuffer)))
+                            {
+                                texture.type = std::string(typeBuffer);
+                                // Optionally, validate the type or restrict it to certain values
+                            }
+
+                            // --- Texture ID ---
+                            int texID = static_cast<int>(texture.id);
+                            if (ImGui::InputInt(("Texture ID##" + std::to_string(i)).c_str(), &texID, 1, 0))
+                            {
+                                texture.id = static_cast<GLuint>(texID);
+                            }
+
+                            // --- Texture Path ---
+                            char pathBuffer[256];
+                            strncpy(pathBuffer, texture.path.c_str(), sizeof(pathBuffer) - 1);
+                            pathBuffer[sizeof(pathBuffer) - 1] = '\0';
+
+                            if (ImGui::InputText(("Path##" + std::to_string(i)).c_str(), pathBuffer, sizeof(pathBuffer)))
+                            {
+                                texture.path = std::string(pathBuffer);
+                                // Optionally, trigger reloading the texture if the path changes
+                                // e.g., texture.id = g_AssetManager.loadTexture(texture.path, directory);
+                            }
+
+                            // --- Texture Preview ---
+                            if (texture.id != 0)
+                            {
+                                // Retrieve the texture's width and height if needed
+                                // For demonstration, using a fixed size
+                                
+                                ImGui::Image(static_cast<ImTextureID>(texture.id), ImVec2(availableWidth, availableWidth), ImVec2(0, 0), ImVec2(1, 1));
+                            }
+                            else
+                            {
+                                ImGui::Text("No texture bound.");
+                            }
+
+                            // --- Remove Texture Button ---
+                            std::string removeButtonLabel = "Remove##" + std::to_string(i);
+                            if (ImGui::Button(removeButtonLabel.c_str()))
+                            {
+                                mesh->textures.erase(mesh->textures.begin() + i);
+                                // Adjust index after removal
+                                ImGui::TreePop();
+                                break; // Exit the loop as the current index is invalidated
+                            }
+
+                            ImGui::Separator();
+                        }
+                    }
+
+                    // --- Add New Texture Button ---
+                    // if (ImGui::Button("Add Texture"))
+                    //{
+                    //    // Define default values for the new texture
+                    //    Texture newTexture;
+                    //    newTexture.id = 0;                       // Assign a default or invalid texture ID
+                    //    newTexture.type = "texture_diffuse";     // Default type
+                    //    newTexture.path = "path/to/texture.png"; // Default path
+                    //
+                    //    mesh->textures.push_back(newTexture);
+                    //}
+                    //
+                    // --- Display All Textures ---
+                    // Optionally, display all textures in a separate section or after the list
+
+                
                 }
             }
+
             ImGui::Spacing();
 
             if (script && g_SelectedObject)
@@ -444,7 +684,6 @@ void InspectorWindow::Show()
 
                     buffer[BUFFER_SIZE - 1] = '\0'; // Ensure null-termination
 
-
                     // Render the InputText widget
                     if (ImGui::InputText("Script Path", buffer, BUFFER_SIZE))
                     {
@@ -458,6 +697,7 @@ void InspectorWindow::Show()
 
                         if (script->Initialize())
                         {
+                            script->Init();
                             g_LoggerWindow->AddLog("Reloaded Script: %s", ImVec4(0.0f, 1.0f, 0.0f, 1.0f), script->ScriptPath.c_str());
                         }
                     }

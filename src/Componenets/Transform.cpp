@@ -22,6 +22,12 @@ const std::string& TransformComponent::GetStaticName()
     return name;
 }
 
+void TransformComponent::Update(float _deltaTime)
+{
+    (void)_deltaTime; // Suppress unused parameter warning
+    return;
+}
+
 YAML::Node TransformComponent::Serialize()
 {
     YAML::Node node;

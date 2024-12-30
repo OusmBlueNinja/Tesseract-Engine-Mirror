@@ -28,6 +28,10 @@ extern std::vector<std::shared_ptr<GameObject>> g_GameObjects;
 extern AssetManager g_AssetManager;
 
 
+extern std::shared_ptr<CameraComponent> g_RuntimeCameraObject;
+
+
+
 extern int g_GPU_Triangles_drawn_to_screen;
 
 // Example cube data (position + UVs)
@@ -284,7 +288,7 @@ void RenderWindow::Show(bool *GameRunning)
             m_LastHeight = h;
         }
 
-        RenderSceneToFBO();
+        RenderSceneToFBO(GameRunning);
 
         ImGui::Image(m_FBO.GetTextureID(), size, ImVec2(0, 0), ImVec2(1, 1));
     }
@@ -361,64 +365,104 @@ void RenderWindow::InitGLResources()
     // ----------------------------------------------------
 }
 
-void RenderWindow::RenderSceneToFBO()
-{
 
-    m_RotationAngle += 0.001f; // spin per frame
+void CheckOpenGLError(const std::string &location)
+{
+    GLenum err;
+    bool hasError = false;
+    while ((err = glGetError()) != GL_NO_ERROR)
+    {
+        std::cerr << "[OpenGL Error] (" << err << ") at " << location << std::endl;
+        hasError = true;
+    }
+    if (hasError)
+    {
+        // Optionally, you can throw an exception or handle the error as needed
+    }
+}
+
+
+
+
+void RenderWindow::RenderSceneToFBO(bool *GameRunning)
+{
+    m_RotationAngle += 0.001f; // Spin per frame
 
     // Bind the FBO
     m_FBO.Bind();
     glViewport(0, 0, m_LastWidth, m_LastHeight);
+    CheckOpenGLError("After glViewport");
 
     glEnable(GL_DEPTH_TEST);
+    CheckOpenGLError("After glEnable(GL_DEPTH_TEST)");
 
     glClearColor(0.f, 0.f, 0.f, 1.f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    CheckOpenGLError("After glClear");
 
     // Use our loaded shader
-
     if (!m_ShaderPtr)
+    {
+        std::cerr << "[RenderWindow] Shader pointer is null. Cannot render." << std::endl;
+        m_FBO.Unbind();
         return; // Can't render without a shader
+    }
 
     m_ShaderPtr->Use();
     GLuint programID = m_ShaderPtr->GetProgramID();
+    CheckOpenGLError("After shader use");
 
     // Define view and projection matrices once
-    glm::mat4 view = glm::translate(glm::mat4(1.f), glm::vec3(0.f, 0.f, -5.f));
-    float aspect = (m_LastHeight != 0) ? (float)m_LastWidth / (float)m_LastHeight : 1.0f;
-    glm::mat4 proj = glm::perspective(glm::radians(CAM_FOV), aspect, CAM_NEAR_PLAIN, CAM_FAR_PLAIN);
+    std::shared_ptr<CameraComponent> activeCamera = nullptr;
+
+    glm::mat4 view;
+    glm::mat4 proj;
+
+    if (*GameRunning && g_RuntimeCameraObject)
+    {
+        activeCamera = g_RuntimeCameraObject;
+    }
+
+    // Ensure that an active camera is available
+    if (activeCamera)
+    {
+        // Obtain view and projection matrices from the active camera
+        view = activeCamera->GetViewMatrix();
+        proj = activeCamera->GetProjectionMatrix();
+    }
+    else
+    {
+        // Fallback to default view and projection if no camera is available
+        view = glm::translate(glm::mat4(1.f), glm::vec3(0.f, 0.f, -5.f));
+        float aspect = (m_LastHeight != 0) ? (float)m_LastWidth / (float)m_LastHeight : 1.0f;
+        proj = glm::perspective(glm::radians(CAM_FOV), aspect, CAM_NEAR_PLAIN, CAM_FAR_PLAIN);
+    }
 
     // Iterate over each GameObject and render it
-
     for (auto &obj : g_GameObjects)
     {
-
-        // -----------------------------------
-        // 1) Build MVP from transform
-        // -----------------------------------
         glm::mat4 model = glm::mat4(1.f);
 
         std::shared_ptr<TransformComponent> transform = obj->GetComponent<TransformComponent>();
-
         std::shared_ptr<MeshComponent> mesh = obj->GetComponent<MeshComponent>();
 
         if (transform && mesh)
         {
+            // Validate VAO
+            if (mesh->vao == 0)
+            {
+                std::cerr << "[RenderWindow] Warning: Mesh VAO is not initialized." << std::endl;
+                continue;
+            }
 
-            // Translate
-
+            // Update triangle count
             g_GPU_Triangles_drawn_to_screen += static_cast<int>(mesh->indexCount);
 
+            // Apply transformations
             model = glm::translate(model, transform->position);
-
-            // Rotate around X, Y, Z
-
-            // transform->rotation.x += m_RotationAngle;
             model = glm::rotate(model, glm::radians(transform->rotation.x), glm::vec3(1.f, 0.f, 0.f));
             model = glm::rotate(model, glm::radians(transform->rotation.y), glm::vec3(0.f, 1.f, 0.f));
             model = glm::rotate(model, glm::radians(transform->rotation.z), glm::vec3(0.f, 0.f, 1.f));
-
-            // Scale
             model = glm::scale(model, transform->scale);
 
             // Compute MVP
@@ -426,31 +470,111 @@ void RenderWindow::RenderSceneToFBO()
 
             // Pass MVP to the shader
             GLint mvpLoc = glGetUniformLocation(programID, "uMVP");
-            glUniformMatrix4fv(mvpLoc, 1, GL_FALSE, glm::value_ptr(mvp));
+            if(mvpLoc != -1)
+            {
+                glUniformMatrix4fv(mvpLoc, 1, GL_FALSE, glm::value_ptr(mvp));
+            }
+            else
+            {
+                std::cerr << "[RenderWindow] Warning: Uniform 'uMVP' not found in shader." << std::endl;
+            }
+
+            // Pass Model matrix to the shader
+            GLint modelLoc = glGetUniformLocation(programID, "uModel");
+            if(modelLoc != -1)
+            {
+                glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+            }
+            else
+            {
+                std::cerr << "[RenderWindow] Warning: Uniform 'uModel' not found in shader." << std::endl;
+            }
 
             // -----------------------------------
-            // 2) Bind the object's texture
+            // 2) Bind the object's diffuse textures
             // -----------------------------------
-            glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, mesh->textureID);
+            // Define the maximum number of diffuse textures as per the shader
+            const int MAX_DIFFUSE = 32; // Must match the shader's MAX_DIFFUSE
+            int textureUnit = 0;
 
-            // Set the sampler uniform to texture unit 0
-            GLint texLoc = glGetUniformLocation(programID, "uTexture");
-            glUniform1i(texLoc, 0);
+            // Iterate through all textures and bind those with type "texture_diffuse"
+            for (const auto &texture : mesh->textures)
+            {
+                if (texture.type == "texture_diffuse")
+                {
+                    if (textureUnit >= MAX_DIFFUSE)
+                    {
+                        std::cerr << "[RenderWindow] Warning: Exceeded maximum number of diffuse textures (" 
+                                  << MAX_DIFFUSE << ") for shader." << std::endl;
+                        break; // Prevent exceeding the array bounds in the shader
+                    }
+
+                    // Activate the appropriate texture unit
+                    glActiveTexture(GL_TEXTURE0 + textureUnit);
+                    glBindTexture(GL_TEXTURE_2D, texture.id);
+                    CheckOpenGLError("After glBindTexture");
+
+                    // Construct the uniform name dynamically (e.g., "uTextures.texture_diffuse[0]")
+                    std::string uniformName = "uTextures.texture_diffuse[" + std::to_string(textureUnit) + "]";
+                    GLint texLoc = glGetUniformLocation(programID, uniformName.c_str());
+
+                    if (texLoc != -1)
+                    {
+                        glUniform1i(texLoc, textureUnit);
+                        CheckOpenGLError("After glUniform1i for texture");
+                    }
+                    else
+                    {
+                        std::cerr << "[RenderWindow] Warning: Uniform '" << uniformName 
+                                  << "' not found in shader." << std::endl;
+                    }
+
+                    textureUnit++;
+                }
+            }
+
+            // Assign default texture to unused texture slots
+            for(int i = textureUnit; i < MAX_DIFFUSE; ++i)
+            {
+                std::string uniformName = "uTextures.texture_diffuse[" + std::to_string(i) + "]";
+                GLint texLoc = glGetUniformLocation(programID, uniformName.c_str());
+                if(texLoc != -1)
+                {
+                    glUniform1i(texLoc, 0); // Assign texture unit 0 (ensure texture 0 is a valid default)
+                    CheckOpenGLError("After glUniform1i for default texture");
+                }
+            }
+
+            // Set the number of active diffuse textures
+            GLint numDiffuseLoc = glGetUniformLocation(programID, "uNumDiffuseTextures");
+            if(numDiffuseLoc != -1)
+            {
+                glUniform1i(numDiffuseLoc, textureUnit);
+                CheckOpenGLError("After glUniform1i for uNumDiffuseTextures");
+            }
+            else
+            {
+                std::cerr << "[RenderWindow] Warning: Uniform 'uNumDiffuseTextures' not found in shader." << std::endl;
+            }
 
             // -----------------------------------
             // 3) Draw the object's mesh
             // -----------------------------------
             glBindVertexArray(mesh->vao);
             glDrawElements(GL_TRIANGLES, mesh->indexCount, GL_UNSIGNED_INT, nullptr);
-
-            // Unbind for cleanliness
             glBindVertexArray(0);
-            glBindTexture(GL_TEXTURE_2D, 0);
+            CheckOpenGLError("After glDrawElements");
+
+            // Reset active texture
+            glActiveTexture(GL_TEXTURE0);
+            CheckOpenGLError("After glActiveTexture(GL_TEXTURE0)");
         }
     }
 
     // Cleanup
     glUseProgram(0);
+    CheckOpenGLError("After glUseProgram(0)");
+
     m_FBO.Unbind();
+    CheckOpenGLError("After FBO Unbind");
 }

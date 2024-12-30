@@ -66,7 +66,7 @@ function OnUpdate(deltaTime)
 
     -- Define the new rotation (spinning around the Y-axis)
     local rotation = {
-        x = -180, -- Preserving existing rotation on X-axis
+        x = 0, -- Preserving existing rotation on X-axis
         y = new_rotation, -- Updated rotation on Y-axis for spinning
         z = 0 -- Preserving existing rotation on Z-axis
     }

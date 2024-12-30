@@ -4,14 +4,16 @@
 #include "GameObject.h" // Ensure this is included to access GameObject
 #include "Transform.h"  // Ensure Transform component is available
 #include <iostream>
+#include <cassert>
+
+#include "gcml.h"
 
 // Constructor implementation
-CameraComponent::CameraComponent() :
-    m_IsPerspective(true),
-    m_FOV(45.0f), m_AspectRatio(16.0f / 9.0f),
-    m_NearPlane(0.1f), m_FarPlane(100.0f),
-    m_Left(-1.0f), m_Right(1.0f), m_Bottom(-1.0f), m_Top(1.0f),
-    m_ViewMatrix(1.0f), m_ProjectionMatrix(1.0f)
+CameraComponent::CameraComponent() : IsPerspective(true),
+                                     FOV(45.0f), AspectRatio(16.0f / 9.0f),
+                                     NearPlane(0.1f), FarPlane(100.0f),
+                                     Left(-1.0f), Right(1.0f), Bottom(-1.0f), Top(1.0f), DefaultRuntimeCamera(false),
+                                     m_ViewMatrix(1.0f), m_ProjectionMatrix(1.0f)
 {
     UpdateProjectionMatrix();
 }
@@ -33,27 +35,27 @@ const std::string &CameraComponent::GetStaticName()
     return name;
 }
 
-
-
 YAML::Node CameraComponent::Serialize()
 {
     YAML::Node node;
-    node["IsPerspective"] = m_IsPerspective;
-    if (m_IsPerspective)
+    node["IsPerspective"] = IsPerspective;
+    node["DefaultRuntimeCamera"] = DefaultRuntimeCamera;
+
+    if (IsPerspective)
     {
-        node["FOV"] = m_FOV;
-        node["AspectRatio"] = m_AspectRatio;
-        node["NearPlane"] = m_NearPlane;
-        node["FarPlane"] = m_FarPlane;
+        node["FOV"] = FOV;
+        node["AspectRatio"] = AspectRatio;
+        node["NearPlane"] = NearPlane;
+        node["FarPlane"] = FarPlane;
     }
     else
     {
-        node["Left"] = m_Left;
-        node["Right"] = m_Right;
-        node["Bottom"] = m_Bottom;
-        node["Top"] = m_Top;
-        node["NearPlane"] = m_NearPlane;
-        node["FarPlane"] = m_FarPlane;
+        node["Left"] = Left;
+        node["Right"] = Right;
+        node["Bottom"] = Bottom;
+        node["Top"] = Top;
+        node["NearPlane"] = NearPlane;
+        node["FarPlane"] = FarPlane;
     }
     return node;
 }
@@ -62,59 +64,63 @@ void CameraComponent::Deserialize(const YAML::Node &node)
 {
     if (node["IsPerspective"])
     {
-        m_IsPerspective = node["IsPerspective"].as<bool>();
+        IsPerspective = node["IsPerspective"].as<bool>();
     }
 
-    if (m_IsPerspective)
+    if (node["DefaultRuntimeCamera"])
+    {
+        DefaultRuntimeCamera = node["DefaultRuntimeCamera"].as<bool>();
+    }
+
+    if (IsPerspective)
     {
         if (node["FOV"])
-            m_FOV = node["FOV"].as<float>();
+            FOV = node["FOV"].as<float>();
         if (node["AspectRatio"])
-            m_AspectRatio = node["AspectRatio"].as<float>();
+            AspectRatio = node["AspectRatio"].as<float>();
         if (node["NearPlane"])
-            m_NearPlane = node["NearPlane"].as<float>();
+            NearPlane = node["NearPlane"].as<float>();
         if (node["FarPlane"])
-            m_FarPlane = node["FarPlane"].as<float>();
+            FarPlane = node["FarPlane"].as<float>();
     }
     else
     {
         if (node["Left"])
-            m_Left = node["Left"].as<float>();
+            Left = node["Left"].as<float>();
         if (node["Right"])
-            m_Right = node["Right"].as<float>();
+            Right = node["Right"].as<float>();
         if (node["Bottom"])
-            m_Bottom = node["Bottom"].as<float>();
+            Bottom = node["Bottom"].as<float>();
         if (node["Top"])
-            m_Top = node["Top"].as<float>();
+            Top = node["Top"].as<float>();
         if (node["NearPlane"])
-            m_NearPlane = node["NearPlane"].as<float>();
+            NearPlane = node["NearPlane"].as<float>();
         if (node["FarPlane"])
-            m_FarPlane = node["FarPlane"].as<float>();
+            FarPlane = node["FarPlane"].as<float>();
     }
 
     UpdateProjectionMatrix();
-    UpdateViewMatrix();
 }
 
 void CameraComponent::SetPerspective(float fov, float aspectRatio, float nearPlane, float farPlane)
 {
-    m_IsPerspective = true;
-    m_FOV = fov;
-    m_AspectRatio = aspectRatio;
-    m_NearPlane = nearPlane;
-    m_FarPlane = farPlane;
+    IsPerspective = true;
+    FOV = fov;
+    AspectRatio = aspectRatio;
+    NearPlane = nearPlane;
+    FarPlane = farPlane;
     UpdateProjectionMatrix();
 }
 
 void CameraComponent::SetOrthographic(float left, float right, float bottom, float top, float nearPlane, float farPlane)
 {
-    m_IsPerspective = false;
-    m_Left = left;
-    m_Right = right;
-    m_Bottom = bottom;
-    m_Top = top;
-    m_NearPlane = nearPlane;
-    m_FarPlane = farPlane;
+    IsPerspective = false;
+    Left = left;
+    Right = right;
+    Bottom = bottom;
+    Top = top;
+    NearPlane = nearPlane;
+    FarPlane = farPlane;
     UpdateProjectionMatrix();
 }
 
@@ -128,45 +134,60 @@ const glm::mat4 &CameraComponent::GetProjectionMatrix() const
     return m_ProjectionMatrix;
 }
 
+void CameraComponent::Update(float _deltaTime)
+{
+    (void)_deltaTime; // Suppress unused parameter warning
+    UpdateViewMatrix();
+    UpdateProjectionMatrix();
+}
+
 void CameraComponent::UpdateViewMatrix()
 {
-    // Retrieve the Transform component from the owning GameObject
-    std::shared_ptr<TransformComponent> transform = owner->GetComponent<TransformComponent>();
-
-    if (transform)
+    
+    if (m_Owner)
     {
-        glm::vec3 position = transform->GetPosition();
-        glm::vec3 rotation = transform->GetRotation();
 
-        // Convert Euler angles to radians
-        glm::vec3 rotRad = glm::radians(rotation);
+        std::shared_ptr<TransformComponent> transform = m_Owner->GetComponent<TransformComponent>();
 
-        // Calculate forward vector
-        glm::vec3 forward;
-        forward.x = cos(rotRad.y) * cos(rotRad.x);
-        forward.y = sin(rotRad.x);
-        forward.z = sin(rotRad.y) * cos(rotRad.x);
-        forward = glm::normalize(forward);
+        if (transform)
+        {
+            glm::vec3 position = transform->GetPosition();
+            glm::vec3 rotation = transform->GetRotation();
 
-        // Define up vector (assuming Y-up)
-        glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
+            // Convert Euler angles to radians
+            glm::vec3 rotRad = glm::radians(rotation);
 
-        m_ViewMatrix = glm::lookAt(position, position + forward, up);
+            // Calculate forward vector
+            glm::vec3 forward;
+            forward.x = cos(rotRad.y) * cos(rotRad.x);
+            forward.y = sin(rotRad.x);
+            forward.z = sin(rotRad.y) * cos(rotRad.x);
+            forward = glm::normalize(forward);
+
+            // Define up vector (assuming Y-up)
+            glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
+
+            m_ViewMatrix = glm::lookAt(position, position + forward, up);
+        }
+        else
+        {
+            DEBUG_PRINT("Transform component missing on GameObject: %s", m_Owner->name.c_str());
+        }
     }
     else
     {
-        std::cerr << "Transform component missing on GameObject: " << m_Owner->name << std::endl;
+        DEBUG_PRINT("Game Object has no parent");
     }
 }
 
 void CameraComponent::UpdateProjectionMatrix()
 {
-    if (m_IsPerspective)
+    if (IsPerspective)
     {
-        m_ProjectionMatrix = glm::perspective(glm::radians(m_FOV), m_AspectRatio, m_NearPlane, m_FarPlane);
+        m_ProjectionMatrix = glm::perspective(glm::radians(FOV), AspectRatio, NearPlane, FarPlane);
     }
     else
     {
-        m_ProjectionMatrix = glm::ortho(m_Left, m_Right, m_Bottom, m_Top, m_NearPlane, m_FarPlane);
+        m_ProjectionMatrix = glm::ortho(Left, Right, Bottom, Top, NearPlane, FarPlane);
     }
 }

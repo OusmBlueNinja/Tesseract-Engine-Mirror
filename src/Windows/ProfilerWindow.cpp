@@ -13,51 +13,26 @@ ProfilerWindow::ProfilerWindow()
 
 }
 
-// Calculate moving average
-std::vector<float> ProfilerWindow::MovingAverage(const std::deque<double>& data, size_t window)
-{
-    std::vector<float> averages;
-    if (data.size() < window)
-        window = data.size();
 
-    for (size_t i = 0; i <= data.size() - window; ++i)
-    {
-        double sum = 0.0;
-        for (size_t j = i; j < i + window; ++j)
-            sum += data[j];
-        averages.push_back(static_cast<float>(sum / window));
+
+
+std::vector<float> ProfilerWindow::ExponentialMovingAverage(const std::deque<double>& data, float alpha) {
+    std::vector<float> ema;
+    ema.reserve(data.size());
+    float prev = 0.0f;
+    for (const auto& val : data) {
+        prev = alpha * static_cast<float>(val) + (1.0f - alpha) * prev;
+        ema.push_back(prev);
     }
-    return averages;
+    return ema;
 }
 
-std::vector<float> ProfilerWindow::ExponentialMovingAverage(const std::deque<double>& data, float alpha)
-{
-    std::vector<float> smoothedData;
-    if (data.empty())
-        return smoothedData;
-
-    float ema = static_cast<float>(data[0]); // Initialize EMA with the first value
-    smoothedData.push_back(ema);
-
-    for (size_t i = 1; i < data.size(); ++i)
-    {
-        ema = alpha * static_cast<float>(data[i]) + (1 - alpha) * ema;
-        smoothedData.push_back(ema);
-    }
-
-    return smoothedData;
-}
-
-
-// Update the history data structures with the latest profiling data
 void ProfilerWindow::UpdateHistory(const std::unordered_map<std::string, ProfileResult>& data, double totalFrameTime)
 {
     // Update total frame time history
     m_TotalFrameTimeHistory.push_back(totalFrameTime);
     if (m_TotalFrameTimeHistory.size() > MaxFrameHistory)
         m_TotalFrameTimeHistory.pop_front();
-
-    // Debug: Print the size of m_TotalFrameTimeHistory
 
     // Update each function's profiling history
     for (const auto& [name, result] : data)
@@ -74,10 +49,43 @@ void ProfilerWindow::UpdateHistory(const std::unordered_map<std::string, Profile
         history.averageTimeHistory.push_back(average);
         if (history.averageTimeHistory.size() > ProfileHistory::MaxHistory)
             history.averageTimeHistory.pop_front();
+
+        // Update call count history
+        history.callCountHistory.push_back(result.CallCount);
+        if (history.callCountHistory.size() > ProfileHistory::MaxHistory)
+            history.callCountHistory.pop_front();
+    }
+
+    // Ensure that functions not present in the current frame retain their last TotalTime and AverageTime
+    for (auto& [name, history] : m_ProfileHistories)
+    {
+        if (data.find(name) == data.end())
+        {
+            // Retain last TotalTime and AverageTime by pushing back the last value again
+            if (!history.totalTimeHistory.empty())
+                history.totalTimeHistory.push_back(history.totalTimeHistory.back());
+            else
+                history.totalTimeHistory.push_back(0.0);
+
+            if (!history.averageTimeHistory.empty())
+                history.averageTimeHistory.push_back(history.averageTimeHistory.back());
+            else
+                history.averageTimeHistory.push_back(0.0);
+
+            // Update call count history with zero for this frame
+            history.callCountHistory.push_back(0);
+
+            // Maintain history sizes
+            if (history.totalTimeHistory.size() > ProfileHistory::MaxHistory)
+                history.totalTimeHistory.pop_front();
+            if (history.averageTimeHistory.size() > ProfileHistory::MaxHistory)
+                history.averageTimeHistory.pop_front();
+            if (history.callCountHistory.size() > ProfileHistory::MaxHistory)
+                history.callCountHistory.pop_front();
+        }
     }
 }
 
-// Render the profiler window with table and graphs
 void ProfilerWindow::Show()
 {
     // Check if it's time to update the profiler data
@@ -91,8 +99,8 @@ void ProfilerWindow::Show()
         m_LastUpdateTime = now;
     }
 
-    // Begin ImGui window
-    ImGui::Begin("Profiler");
+    // Begin ImGui window with improved styling
+    ImGui::Begin("Profiler", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_HorizontalScrollbar);
 
     const auto& data = Profiler::Get().GetLastFrameData();
 
@@ -120,62 +128,72 @@ void ProfilerWindow::Show()
     }
 
     // Render profiling data table
-    RenderTable(data);
+    RenderTable();
 
     // Render profiling graphs
-    //RenderGraphs();
+    RenderGraphs();
 
     // Display total frame time (from the last update)
     if (!m_TotalFrameTimeHistory.empty())
     {
         double lastTotalFrameTime = m_TotalFrameTimeHistory.back();
         ImGui::Separator();
-        ImGui::Text("Total Frame Time: %.3f µs", lastTotalFrameTime);
+        ImGui::TextColored(ImVec4(0.4f, 0.7f, 0.0f, 1.0f), "Total Frame Time: %.3f µs", lastTotalFrameTime);
     }
 
     ImGui::End();
 }
 
-// Render the profiling data table
-void ProfilerWindow::RenderTable(const std::unordered_map<std::string, ProfileResult>& data)
+void ProfilerWindow::RenderTable()
 {
-    // Sort functions by total time descending
-    std::vector<std::pair<std::string, ProfileResult>> sortedData(data.begin(), data.end());
-    std::sort(sortedData.begin(), sortedData.end(),
-        [](const std::pair<std::string, ProfileResult>& a, const std::pair<std::string, ProfileResult>& b) -> bool {
-            return a.second.TotalTime > b.second.TotalTime;
+    // Collect all profiling histories
+    std::vector<std::pair<std::string, ProfileHistory>> allData(m_ProfileHistories.begin(), m_ProfileHistories.end());
+
+    // Sort functions by last Total Time descending
+    std::sort(allData.begin(), allData.end(),
+        [](const std::pair<std::string, ProfileHistory>& a, const std::pair<std::string, ProfileHistory>& b) -> bool {
+            return a.second.totalTimeHistory.back() > b.second.totalTimeHistory.back();
         });
 
-    // Add a filter input
+    // Add a filter input with enhanced styling
+    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(4, 2));
     static char filterBuffer[128] = "";
-    ImGui::InputText("Filter", filterBuffer, IM_ARRAYSIZE(filterBuffer));
+    ImGui::InputTextWithHint("##Filter", "Filter functions...", filterBuffer, IM_ARRAYSIZE(filterBuffer));
+    ImGui::PopStyleVar();
 
     // Convert filter to string
     std::string filterStr = filterBuffer;
 
     // Filtered data
-    std::vector<std::pair<std::string, ProfileResult>> filteredData;
-    for (const auto& [name, result] : sortedData)
+    std::vector<std::pair<std::string, ProfileHistory>> filteredData;
+    for (const auto& [name, history] : allData)
     {
         if (filterStr.empty() || name.find(filterStr) != std::string::npos)
-            filteredData.emplace_back(name, result);
+            filteredData.emplace_back(name, history);
     }
 
     // Define threshold for highlighting (e.g., 1000 µs)
     const double highlightThreshold = 1000.0;
 
-    // Table with sorted data
-    if (ImGui::BeginTable("ProfilerTable", 4, ImGuiTableFlags_RowBg | ImGuiTableFlags_Borders | ImGuiTableFlags_Resizable))
+    // Improved table with sorting indicators and better aesthetics
+    if (ImGui::BeginTable("ProfilerTable", 4, ImGuiTableFlags_RowBg | ImGuiTableFlags_Borders | ImGuiTableFlags_Resizable | ImGuiTableFlags_ScrollY, ImVec2(0, 300)))
     {
+        // Set up columns with sortable headers
         ImGui::TableSetupColumn("Function", ImGuiTableColumnFlags_None);
         ImGui::TableSetupColumn("Total Time (µs)", ImGuiTableColumnFlags_None);
         ImGui::TableSetupColumn("Average Time (µs)", ImGuiTableColumnFlags_None);
-        ImGui::TableSetupColumn("Calls", ImGuiTableColumnFlags_None);
+        ImGui::TableSetupColumn("Calls (This Frame)", ImGuiTableColumnFlags_None);
         ImGui::TableHeadersRow();
 
-        for (const auto& [name, result] : filteredData)
+        // Alternate row colors for better readability
+        bool rowBg = false;
+
+        for (const auto& [name, history] : filteredData)
         {
             ImGui::TableNextRow();
+            rowBg = !rowBg;
+            if (rowBg)
+                ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg0, ImColor(0.1f, 0.1f, 0.1f, 1.0f));
 
             // Function Name with tooltip
             ImGui::TableSetColumnIndex(0);
@@ -183,70 +201,58 @@ void ProfilerWindow::RenderTable(const std::unordered_map<std::string, ProfileRe
             if (ImGui::IsItemHovered())
             {
                 ImGui::BeginTooltip();
-                ImGui::Text("Total Time: %.3f µs", result.TotalTime);
-                double average = result.CallCount > 0 ? result.TotalTime / result.CallCount : 0.0;
-                ImGui::Text("Average Time: %.3f µs", average);
-                ImGui::Text("Call Count: %d", result.CallCount);
+                ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.0f, 1.0f), "Function: %s", name.c_str());
+                ImGui::Text("Total Time: %.3f µs", history.totalTimeHistory.back());
+                ImGui::Text("Average Time: %.3f µs", history.averageTimeHistory.back());
+                ImGui::Text("Call Count (this frame): %d", history.callCountHistory.back());
                 ImGui::EndTooltip();
             }
 
             // Total Time with color coding
             ImGui::TableSetColumnIndex(1);
-            if (result.TotalTime > highlightThreshold)
-                ImGui::TextColored(ImVec4(1.0f, 0.3f, 0.3f, 1.0f), "%.3f", result.TotalTime);
+            if (history.totalTimeHistory.back() > highlightThreshold)
+                ImGui::TextColored(ImVec4(1.0f, 0.3f, 0.3f, 1.0f), "%.3f", history.totalTimeHistory.back());
             else
-                ImGui::Text("%.3f", result.TotalTime);
+                ImGui::Text("%.3f", history.totalTimeHistory.back());
 
             // Average Time
             ImGui::TableSetColumnIndex(2);
-            double average = result.CallCount > 0 ? result.TotalTime / result.CallCount : 0.0;
-            ImGui::Text("%.3f", average);
+            ImGui::Text("%.3f", history.averageTimeHistory.back());
 
-            // Call Count
+            // Call Count (This Frame)
             ImGui::TableSetColumnIndex(3);
-            ImGui::Text("%d", result.CallCount);
+            ImGui::Text("%d", history.callCountHistory.back());
         }
 
         ImGui::EndTable();
     }
 }
 
-
-
-
 void ProfilerWindow::RenderGraphs()
 {
     ImGui::Separator();
-    ImGui::Text("Profiling Graphs (Unified Multi-Line Plot)");
+    ImGui::TextColored(ImVec4(0.0f, 0.7f, 0.9f, 1.0f), "Profiling Graphs (Top 5 Functions)");
 
-    const auto& data = Profiler::Get().GetLastFrameData();
-    std::vector<std::pair<std::string, ProfileResult>> sortedData;
-
-    // Collect and sort functions by total time used
-    for (const auto& [name, result] : data)
-    {
-        sortedData.emplace_back(name, result);
-    }
-
+    // Collect and sort functions by last Total Time descending
+    std::vector<std::pair<std::string, ProfileHistory>> sortedData(m_ProfileHistories.begin(), m_ProfileHistories.end());
     std::sort(sortedData.begin(), sortedData.end(),
-              [](const std::pair<std::string, ProfileResult>& a, const std::pair<std::string, ProfileResult>& b) -> bool {
-                  return a.second.TotalTime > b.second.TotalTime;
-              });
+        [](const std::pair<std::string, ProfileHistory>& a, const std::pair<std::string, ProfileHistory>& b) -> bool {
+            return a.second.totalTimeHistory.back() > b.second.totalTimeHistory.back();
+        });
 
     size_t displayCount = std::min<size_t>(5, sortedData.size()); // Limit to top 5 functions
 
-    // Prepare data for the unified plot
+    // Prepare data for the unified plot with EMA smoothing
     std::vector<std::vector<float>> plotData(displayCount);
     std::vector<std::string> functionNames;
 
     float alpha = 0.2f; // Smoothing factor for EMA
     for (size_t i = 0; i < displayCount; ++i)
     {
-        const auto& [name, result] = sortedData[i];
+        const auto& [name, history] = sortedData[i];
         functionNames.push_back(name);
 
         // Smooth each function's data using EMA
-        const auto& history = m_ProfileHistories[name];
         plotData[i] = ExponentialMovingAverage(history.totalTimeHistory, alpha);
     }
 
@@ -265,33 +271,40 @@ void ProfilerWindow::RenderGraphs()
     // Prepare the combined graph
     if (maxHistorySize > 0)
     {
-        std::vector<float> combinedGraph(maxHistorySize, 0.0f);
-
-        // Render a single unified graph with multi-line data
         ImVec2 graphSize = ImVec2(0, 200); // Graph dimensions
 
-        ImGui::PlotLines(
-            "##UnifiedGraph",
-            [](void* data, int idx) -> float {
-                auto* plotData = static_cast<std::vector<std::vector<float>>*>(data);
-                float value = 0.0f;
+        // Begin child region for better layout control
+        ImGui::BeginChild("GraphChild", graphSize, false, ImGuiWindowFlags_NoScrollbar);
 
-                for (const auto& series : *plotData)
-                {
-                    if (idx < series.size())
-                        value += series[idx];
-                }
+        // Plot each function's history as separate lines with unique colors
+        for (size_t i = 0; i < displayCount; ++i)
+        {
+            ImU32 color = ImColor::HSV(static_cast<float>(i) / displayCount, 0.6f, 0.9f);
+            ImGui::PushStyleColor(ImGuiCol_PlotLines, color);
+            ImGui::PlotLines(
+                functionNames[i].c_str(),
+                plotData[i].data(),
+                static_cast<int>(plotData[i].size()),
+                0,
+                nullptr,
+                0.0f,
+                static_cast<float>(maxValue) * 1.1f, // Add some padding to the max value
+                ImVec2(0, 100)
+            );
+            ImGui::PopStyleColor();
+        }
 
-                return value;
-            },
-            static_cast<void*>(&plotData), static_cast<int>(maxHistorySize), 0, nullptr, 0.0f, maxValue, graphSize);
+        ImGui::EndChild();
 
         // Add a legend for the lines
         ImGui::Separator();
         for (size_t i = 0; i < functionNames.size(); ++i)
         {
-            ImVec4 lineColor = ImVec4(0.2f + 0.2f * i, 0.2f, 1.0f - 0.2f * i, 1.0f);
-            ImGui::TextColored(lineColor, "%s", functionNames[i].c_str());
+            ImVec4 lineColor = ImColor::HSV(static_cast<float>(i) / displayCount, 0.6f, 0.9f);
+            ImGui::SameLine();
+            ImGui::ColorButton(("##Color" + std::to_string(i)).c_str(), lineColor, ImGuiColorEditFlags_NoTooltip | ImGuiColorEditFlags_NoDragDrop | ImGuiColorEditFlags_NoBorder, ImVec2(10, 10));
+            ImGui::SameLine();
+            ImGui::TextUnformatted(functionNames[i].c_str());
         }
     }
 }

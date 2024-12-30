@@ -49,6 +49,10 @@ SceneManager g_SceneManager;
 
 std::vector<std::shared_ptr<GameObject>> g_GameObjects;
 
+
+std::shared_ptr<CameraComponent> g_RuntimeCameraObject;
+
+
 int g_GPU_Triangles_drawn_to_screen = 0;
 
 GameObject *g_SelectedObject; // Pointer to the currently selected object
@@ -145,51 +149,6 @@ void MyEngine::Run()
 
     DEBUG_PRINT("Transition to Editor");
 
-    // Pseudocode:
-    int newId = g_GameObjects.size();
-    auto newGameObject = std::make_shared<GameObject>(newId, ("Default"));
-
-    DEBUG_PRINT("Created Default GameObject");
-
-    newGameObject->AddComponent(std::make_shared<TransformComponent>());
-    newGameObject->AddComponent(std::make_shared<MeshComponent>());
-
-    DEBUG_PRINT("Added Componenets");
-
-    // Suppose we loaded a VAO, an EBO with 36 indices for the cube,
-    // and a texture ID from the asset manager
-    auto mesh = newGameObject->GetComponent<MeshComponent>();
-    auto transform = newGameObject->GetComponent<TransformComponent>();
-
-    DEBUG_PRINT("Got pointers to Componenets");
-
-    if (mesh)
-    {
-        // printf("Got Valid Mesh Component\n");
-        Model *model = g_AssetManager.loadAsset<Model *>(AssetType::MODEL, "assets/models/DefaultMesh.obj");
-        mesh->vao = model->vao;
-        mesh->indexCount = model->indices.size();
-        mesh->textureID = g_AssetManager.loadAsset<GLuint>(AssetType::TEXTURE, "assets/textures/wood.png");
-    }
-    else
-    {
-
-        DEBUG_PRINT("Could not find Mesh Component\n");
-    }
-
-    if (transform)
-    {
-        // printf("Got Valid Transform Component\n");
-        transform->position = glm::vec3(0.f, 0.f, 0.f);
-        transform->rotation = glm::vec3(0.f, 0.5f, 0.f);
-        transform->scale = glm::vec3(1.f, 1.f, 1.f);
-    }
-    else
-    {
-
-        DEBUG_PRINT("Could not find Transform Component");
-    }
-
     g_AssetManager.loadAsset<GLuint>(AssetType::TEXTURE, "assets/textures/bricks.png");
     g_AssetManager.loadAsset<GLuint>(AssetType::TEXTURE, "assets/textures/default.png");
     g_AssetManager.loadAsset<GLuint>(AssetType::TEXTURE, "assets/textures/lush_grass.png");
@@ -216,7 +175,6 @@ void MyEngine::Run()
 
     DEBUG_PRINT("Model loaded successfully with %lld vertices and %lld indices.", model4->vertices.size(), model4->indices.size());
 
-    g_GameObjects.push_back(newGameObject);
     DEBUG_PRINT("Put componenent into Global Componenets Subsystem");
 
     // printf("%p\n", &g_GameObjects);
@@ -262,12 +220,28 @@ void MyEngine::Run()
 
         if (m_FirstTickGameRunning && m_GameRunning)
         {
+
             ScopedTimer timer("SaveScene");
             m_FirstTickGameRunning = false;
 
             std::string savePath = createTempFolder().string() + "TesseractEngineTempScene.scene";
             DEBUG_PRINT("Save path: %s", savePath.c_str());
             g_SceneManager.SaveScene(g_GameObjects, savePath);
+
+
+            ScopedTimer LUA_INIT_timer("GameObjectsScriptInit");
+            for (auto &Gameobject : g_GameObjects)
+            {
+
+                // Handle Components That Require Updates
+                std::shared_ptr<ScriptComponent> script = Gameobject->GetComponent<ScriptComponent>();
+                if (script)
+                { // Null Checks
+                    ScopedTimer Lua_timer("GameObjectLuaCall_INIT: " + Gameobject->name); // var has to be named that or it will be redecl
+
+                    script->Init();
+                }
+            }
         }
 
         if (!m_FirstTickGameRunning && !m_GameRunning)
@@ -291,14 +265,9 @@ void MyEngine::Run()
             for (auto &Gameobject : g_GameObjects)
             {
 
-                // Handle Components That Require Updates
-                std::shared_ptr<ScriptComponent> script = Gameobject->GetComponent<ScriptComponent>();
-                if (script)
-                { // Null Checks
-                    ScopedTimer timer("GameObjectLuaCall: " + Gameobject->name);
+                
 
-                    script->Update(frame_delta);
-                }
+                Gameobject->Update(frame_delta);
             }
         }
 

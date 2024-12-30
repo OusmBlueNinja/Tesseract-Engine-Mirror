@@ -9,35 +9,31 @@
 
 class ProfilerWindow
 {
+
 public:
     ProfilerWindow();
-    ~ProfilerWindow() = default;
 
-    // Render the profiler window
+    void UpdateHistory(const std::unordered_map<std::string, ProfileResult> &data, double totalFrameTime);
     void Show();
+    void RenderTable();
+    void RenderGraphs();
 
 private:
     struct ProfileHistory
     {
-        std::deque<double> totalTimeHistory;
-        std::deque<double> averageTimeHistory;
         static const size_t MaxHistory = 100;
+        std::deque<double> totalTimeHistory;   // Last N total times
+        std::deque<double> averageTimeHistory; // Last N average times
+        std::deque<int> callCountHistory;      // Last N call counts
     };
 
     std::unordered_map<std::string, ProfileHistory> m_ProfileHistories;
     std::deque<double> m_TotalFrameTimeHistory;
     static const size_t MaxFrameHistory = 100;
 
-    // Timing variables for update throttling
-    double m_UpdateInterval; // Interval in seconds (0.1)
     std::chrono::steady_clock::time_point m_LastUpdateTime;
+    double m_UpdateInterval; // In seconds
 
-    // Helper functions
-    void UpdateHistory(const std::unordered_map<std::string, ProfileResult> &data, double totalFrameTime);
-    void RenderTable(const std::unordered_map<std::string, ProfileResult> &data);
-    void RenderGraphs();
-
-    // Helper for data smoothing
-    std::vector<float> MovingAverage(const std::deque<double> &data, size_t window);
+    // Helper function for Exponential Moving Average
     std::vector<float> ExponentialMovingAverage(const std::deque<double> &data, float alpha);
 };

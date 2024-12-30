@@ -12,7 +12,7 @@ public:
 
 private:
     void InitGLResources();
-    void RenderSceneToFBO();
+    void RenderSceneToFBO(bool *GameRunning);
 
     // Offscreen render target
     FBO m_FBO;

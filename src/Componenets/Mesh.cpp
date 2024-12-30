@@ -10,7 +10,7 @@ extern AssetManager g_AssetManager;
 const std::string MeshComponent::name = "Mesh";
 
 MeshComponent::MeshComponent()
-    : vao(0), indexCount(0), textureID(0), MeshPath("assets/models/DefaultMesh.obj")
+    : vao(0), indexCount(0), MeshPath("assets/models/DefaultMesh.obj")
 {
 }
 
@@ -24,73 +24,111 @@ const std::string &MeshComponent::GetStaticName()
     return name;
 }
 
+void MeshComponent::Update(float deltaTime)
+{
+    return;
+}
 YAML::Node MeshComponent::Serialize()
 {
     YAML::Node node;
 
     node["vao"] = static_cast<int>(vao);
     node["indexCount"] = static_cast<int>(indexCount);
-    node["textureID"] = static_cast<int>(textureID);
 
-    node["MeshPath"] = static_cast<std::string>(MeshPath);
+    // Serialize Textures
+    YAML::Node texturesNode;
+    for (const auto &texture : textures)
+    {
+        YAML::Node texNode;
+        texNode["id"] = static_cast<int>(texture.id);
+        texNode["type"] = texture.type;
+        texNode["path"] = texture.path;
+        texturesNode.push_back(texNode);
+    }
+    node["textures"] = texturesNode;
+
+    node["MeshPath"] = MeshPath;
 
     return node;
 }
 
 void MeshComponent::Deserialize(const YAML::Node &node)
 {
-
     if (node["MeshPath"])
     {
-        MeshPath = static_cast<std::string>(node["MeshPath"].as<std::string>());
-
-                // g_AssetManager.DebugAssetMap();
+        MeshPath = node["MeshPath"].as<std::string>();
 
         DEBUG_PRINT("Loading Mesh: %s", MeshPath.c_str());
 
         Model *model = g_AssetManager.loadAsset<Model *>(AssetType::MODEL, MeshPath.c_str());
-        DEBUG_PRINT("Model loaded successfully with %lld vertices and %lld indices.", model->vertices.size(), model->indices.size());
 
+        if (!model)
+        {
+            DEBUG_PRINT("Failed to load model: %s", MeshPath.c_str());
+            return;
+        }
+
+        DEBUG_PRINT("Model loaded successfully with %zu vertices and %zu indices.", 
+                    model->vertices.size(), model->indices.size());
+
+        // Assign VAO and index count
         if (model->vao != 0)
         {
             vao = model->vao;
         }
         else if (node["vao"])
         {
-            vao = static_cast<int>(node["vao"].as<int>());
+            vao = node["vao"].as<int>();
         }
+
         if (model->indices.size() != 0)
         {
-            indexCount = model->indices.size();
+            indexCount = static_cast<GLuint>(model->indices.size());
         }
         else if (node["indexCount"])
         {
-            indexCount = static_cast<int>(node["indexCount"].as<int>());
+            indexCount = node["indexCount"].as<int>();
         }
-        if (textureID != 0)
-        {
 
-            textureID = model->textureID;
-        }
-        else if (node["textureID"])
+        // Assign Textures
+        if (!model->textures.empty())
         {
-            textureID = static_cast<int>(node["textureID"].as<int>());
+            textures = model->textures;
+        }
+        else if (node["textures"])
+        {
+            const YAML::Node &texturesNode = node["textures"];
+            for (const auto &texNode : texturesNode)
+            {
+                Texture texture;
+                texture.id = texNode["id"].as<int>();
+                texture.type = texNode["type"].as<std::string>();
+                texture.path = texNode["path"].as<std::string>();
+                textures.push_back(texture);
+            }
         }
     }
     else
     {
-
         if (node["vao"])
         {
-            vao = static_cast<int>(node["vao"].as<int>());
+            vao = node["vao"].as<int>();
         }
         if (node["indexCount"])
         {
-            indexCount = static_cast<int>(node["indexCount"].as<int>());
+            indexCount = node["indexCount"].as<int>();
         }
-        if (node["textureID"])
+        if (node["textures"])
         {
-            textureID = static_cast<int>(node["textureID"].as<int>());
+            const YAML::Node &texturesNode = node["textures"];
+            for (const auto &texNode : texturesNode)
+            {
+                Texture texture;
+                texture.id = texNode["id"].as<int>();
+                texture.type = texNode["type"].as<std::string>();
+                texture.path = texNode["path"].as<std::string>();
+                textures.push_back(texture);
+            }
         }
     }
 }

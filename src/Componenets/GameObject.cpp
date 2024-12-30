@@ -32,6 +32,19 @@ void GameObject::AddComponent(const std::shared_ptr<Component> &component)
     // std::cout << "Added " << component->GetName() << std::endl;
 }
 
+void GameObject::Update(float deltaTime) {
+    // Iterate using range-based for loop
+    for (const auto& [componentName, componentPtr] : components) {
+        if (componentPtr) { // Check if the pointer is valid
+            componentPtr->Update(deltaTime); // Call the Update method
+        } else {
+            DEBUG_PRINT("Warning: '%s' is not a valid pointer:", componentName.c_str());
+        }
+    }
+
+}
+
+
 std::shared_ptr<Component> GameObject::GetComponentByName(const std::string &name) const
 {
     auto it = components.find(name);
@@ -83,21 +96,27 @@ void GameObject::Deserialize(const YAML::Node &node)
 
             if (compName == TransformComponent::GetStaticName())
             {
-                auto transform = std::make_shared<TransformComponent>();
-                transform->Deserialize(compNode);
-                AddComponent(transform);
+                auto NewComponent = std::make_shared<TransformComponent>();
+                NewComponent->Deserialize(compNode);
+                AddComponent(NewComponent);
             }
             else if (compName == MeshComponent::GetStaticName())
             {
-                auto mesh = std::make_shared<MeshComponent>();
-                mesh->Deserialize(compNode);
-                AddComponent(mesh);
+                auto NewComponent = std::make_shared<MeshComponent>();
+                NewComponent->Deserialize(compNode);
+                AddComponent(NewComponent);
             }
             else if (compName == ScriptComponent::GetStaticName())
             {
-                auto ScriptComp = std::make_shared<ScriptComponent>();
-                ScriptComp->Deserialize(compNode);
-                AddComponent(ScriptComp);
+                auto NewComponent = std::make_shared<ScriptComponent>();
+                NewComponent->Deserialize(compNode);
+                AddComponent(NewComponent);
+            }
+            else if (compName == CameraComponent::GetStaticName())
+            {
+                auto NewComponent = std::make_shared<CameraComponent>();
+                NewComponent->Deserialize(compNode);
+                AddComponent(NewComponent);
             }
             else
             {

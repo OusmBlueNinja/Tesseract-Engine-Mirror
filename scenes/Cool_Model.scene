@@ -1,0 +1,87 @@
+Entities:
+  - ID: 1
+    Name: Gun
+    Components:
+      ScriptComponent:
+        ScriptPath: assets/scripts/BouncingItem.lua
+      Transform:
+        Position: [0, 1.79999995, 0]
+        Rotation: [0, 71.8000031, 0]
+        Scale: [0.00999999978, 0.00999999978, 0.00999999978]
+      Mesh:
+        vao: 4
+        indexCount: 786801
+        textures:
+          - id: 11
+            type: texture_diffuse
+            path: textures/lion.tga
+          - id: 12
+            type: texture_diffuse
+            path: textures/background.tga
+          - id: 13
+            type: texture_diffuse
+            path: textures/vase_plant.tga
+          - id: 14
+            type: texture_diffuse
+            path: textures/sponza_arch_diff.tga
+          - id: 15
+            type: texture_diffuse
+            path: textures/spnza_bricks_a_diff.tga
+          - id: 16
+            type: texture_diffuse
+            path: textures/sponza_ceiling_a_diff.tga
+          - id: 17
+            type: texture_diffuse
+            path: textures/chain_texture.tga
+          - id: 18
+            type: texture_diffuse
+            path: textures/sponza_column_a_diff.tga
+          - id: 19
+            type: texture_diffuse
+            path: textures/sponza_column_b_diff.tga
+          - id: 20
+            type: texture_diffuse
+            path: textures/sponza_column_c_diff.tga
+          - id: 21
+            type: texture_diffuse
+            path: textures/sponza_details_diff.tga
+          - id: 22
+            type: texture_diffuse
+            path: textures/sponza_fabric_diff.tga
+          - id: 23
+            type: texture_diffuse
+            path: textures/sponza_curtain_diff.tga
+          - id: 24
+            type: texture_diffuse
+            path: textures/sponza_fabric_blue_diff.tga
+          - id: 25
+            type: texture_diffuse
+            path: textures/sponza_fabric_green_diff.tga
+          - id: 26
+            type: texture_diffuse
+            path: textures/sponza_curtain_green_diff.tga
+          - id: 27
+            type: texture_diffuse
+            path: textures/sponza_curtain_blue_diff.tga
+          - id: 28
+            type: texture_diffuse
+            path: textures/sponza_flagpole_diff.tga
+          - id: 29
+            type: texture_diffuse
+            path: textures/sponza_floor_a_diff.tga
+          - id: 30
+            type: texture_diffuse
+            path: textures/sponza_thorn_diff.tga
+          - id: 31
+            type: texture_diffuse
+            path: textures/sponza_roof_diff.tga
+          - id: 32
+            type: texture_diffuse
+            path: textures/vase_dif.tga
+          - id: 33
+            type: texture_diffuse
+            path: textures/vase_hanging.tga
+          - id: 34
+            type: texture_diffuse
+            path: textures/vase_round.tga
+        MeshPath: assets/models/sponza.obj

@@ -88,3 +88,10 @@ void ScriptComponent::Update(float deltaTime)
     // Call the Update method of LuaManager
     m_LuaManager.Update(deltaTime);
 }
+
+
+void ScriptComponent::Init()
+{
+    // Call the Update method of LuaManager
+    m_LuaManager.CallLuaFunction("OnInit");
+}

@@ -9,6 +9,7 @@
 #include "Transform.h"
 #include "ScriptComponent.h"
 #include "Mesh.h"
+#include "CameraComponent.h"
 
 #include <yaml-cpp/yaml.h>
 
@@ -29,6 +30,8 @@ public:
 
     void AddComponent(const std::shared_ptr<Component> &component);
     std::shared_ptr<Component> GetComponentByName(const std::string &name) const;
+
+    void Update(float deltaTime);
 
     template <typename T>
     std::shared_ptr<T> GetComponent()

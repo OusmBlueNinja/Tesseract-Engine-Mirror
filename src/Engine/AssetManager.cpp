@@ -147,14 +147,61 @@ Shader *LoadShaderFromList(const std::string &path)
     return newShader;
 }
 
-// case AssetType::SOUND:
-//{
-//     std::cout << "[AssetManager] Loading SOUND from: " << path << std::endl;
-//     // Stub or real code to load .wav / .ogg
-//     return (void *)0xAAAA8888; // placeholder
-// }
 
-Model *LoadModelFromList(const std::string &path)
+
+
+
+
+
+GLuint LoadTexture(const std::string &path, const std::string &directory)
+{
+    std::string fullPath = directory + path;
+    int width, height, channels;
+    unsigned char *data = stbi_load(fullPath.c_str(), &width, &height, &channels, 0);
+    if (!data)
+    {
+        std::cerr << "[AssetManager] failed to load texture: " << fullPath << " " << stbi_failure_reason() << std::endl;
+        return 0;
+    }
+
+    GLenum format;
+    if (channels == 1)
+        format = GL_RED;
+    else if (channels == 3)
+        format = GL_RGB;
+    else if (channels == 4)
+        format = GL_RGBA;
+    else
+        format = GL_RGB; // Default fallback
+
+    GLuint textureID;
+    glGenTextures(1, &textureID);
+    glBindTexture(GL_TEXTURE_2D, textureID);
+    
+    glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0,
+                 format, GL_UNSIGNED_BYTE, data);
+    glGenerateMipmap(GL_TEXTURE_2D);
+
+    // Set texture parameters
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);   
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);   
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR); 
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    glBindTexture(GL_TEXTURE_2D, 0);
+    stbi_image_free(data);
+
+    return textureID;
+}
+
+
+
+
+
+
+
+
+Model* LoadModelFromList(const std::string &path)
 {
     // --------------------------------------------
     // Load an OBJ model
@@ -164,7 +211,7 @@ Model *LoadModelFromList(const std::string &path)
     std::ifstream objFile(path);
     if (!objFile.is_open())
     {
-        DEBUG_PRINT("[AssetManager] Failed to open OBJ file: %s\n", path.c_str());
+        std::cerr << "[AssetManager] Failed to open OBJ file: " << path << std::endl;
         return nullptr;
     }
 
@@ -173,6 +220,14 @@ Model *LoadModelFromList(const std::string &path)
     std::vector<float> temp_normals;
     std::vector<unsigned int> vertexIndices, texCoordIndices, normalIndices;
 
+    // Preallocate vectors with estimated sizes for performance
+    temp_positions.reserve(1000);
+    temp_texCoords.reserve(500);
+    temp_normals.reserve(500);
+    vertexIndices.reserve(3000);
+    texCoordIndices.reserve(3000);
+    normalIndices.reserve(3000);
+
     std::string directory;
     size_t lastSlash = path.find_last_of("/\\");
     if (lastSlash != std::string::npos)
@@ -180,12 +235,15 @@ Model *LoadModelFromList(const std::string &path)
     else
         directory = "";
 
-    DEBUG_PRINT("[AssetManager] Asset Directory: %s", directory.c_str());
+    std::cout << "[AssetManager] Asset Directory: " << directory << std::endl;
 
     std::string line;
     std::string mtlFileName;
     while (std::getline(objFile, line))
     {
+        if (line.empty() || line[0] == '#')
+            continue; // Skip empty lines and comments
+
         std::istringstream iss(line);
         std::string prefix;
         iss >> prefix;
@@ -193,8 +251,9 @@ Model *LoadModelFromList(const std::string &path)
         {
             float x, y, z;
             iss >> x >> y >> z;
+            // Flip the model vertically by inverting the y-axis
             temp_positions.push_back(x);
-            temp_positions.push_back(y);
+            temp_positions.push_back(-y); // Inverted
             temp_positions.push_back(z);
         }
         else if (prefix == "vt")
@@ -208,8 +267,9 @@ Model *LoadModelFromList(const std::string &path)
         {
             float nx, ny, nz;
             iss >> nx >> ny >> nz;
+            // Invert the y-axis for normals as well
             temp_normals.push_back(nx);
-            temp_normals.push_back(ny);
+            temp_normals.push_back(-ny); // Inverted
             temp_normals.push_back(nz);
         }
         else if (prefix == "f")
@@ -250,7 +310,7 @@ Model *LoadModelFromList(const std::string &path)
                 faceVertices.emplace_back(vIdx, tIdx, nIdx);
             }
 
-            // Triangulate if the face has more than 3 vertices (optional)
+            // Triangulate if the face has more than 3 vertices
             for (size_t i = 1; i + 1 < faceVertices.size(); ++i)
             {
                 vertexIndices.push_back(std::get<0>(faceVertices[0]));
@@ -266,7 +326,6 @@ Model *LoadModelFromList(const std::string &path)
                 normalIndices.push_back(std::get<2>(faceVertices[i + 1]));
             }
         }
-
         else if (prefix == "mtllib")
         {
             iss >> mtlFileName;
@@ -276,52 +335,123 @@ Model *LoadModelFromList(const std::string &path)
     objFile.close();
 
     // Load MTL file if specified
-    std::string texturePath;
+    std::vector<Texture> textures;
     if (!mtlFileName.empty())
     {
         std::ifstream mtlFile(directory + mtlFileName);
         if (mtlFile.is_open())
         {
-            while (std::getline(mtlFile, line))
+            std::string mtlLine;
+            std::string currentMaterial;
+            std::unordered_map<std::string, std::string> materialTextures;
+
+            while (std::getline(mtlFile, mtlLine))
             {
-                std::istringstream mtlIss(line);
+                if (mtlLine.empty() || mtlLine[0] == '#')
+                    continue; // Skip comments and empty lines
+
+                std::istringstream mtlIss(mtlLine);
                 std::string mtlPrefix;
                 mtlIss >> mtlPrefix;
-                if (mtlPrefix == "map_Kd")
+
+                if (mtlPrefix == "newmtl")
                 {
-                    mtlIss >> texturePath;
-                    break; // Assuming only one texture map for simplicity
+                    mtlIss >> currentMaterial;
                 }
+                else if (mtlPrefix == "map_Kd")
+                {
+                    std::string texturePath;
+                    mtlIss >> texturePath;
+                    if (!texturePath.empty())
+                    {
+                        GLuint texID = LoadTexture(texturePath, directory);
+                        if (texID != 0)
+                        {
+                            Texture texture;
+                            texture.id = texID;
+                            texture.type = "texture_diffuse";
+                            texture.path = texturePath;
+                            textures.push_back(texture);
+                        }
+                    }
+                }
+                else if (mtlPrefix == "map_Ks")
+                {
+                    std::string texturePath;
+                    mtlIss >> texturePath;
+                    if (!texturePath.empty())
+                    {
+                        GLuint texID = LoadTexture(texturePath, directory);
+                        if (texID != 0)
+                        {
+                            Texture texture;
+                            texture.id = texID;
+                            texture.type = "texture_specular";
+                            texture.path = texturePath;
+                            textures.push_back(texture);
+                        }
+                    }
+                }
+                else if (mtlPrefix == "map_Bump" || mtlPrefix == "map_bump" || mtlPrefix == "bump")
+                {
+                    std::string texturePath;
+                    mtlIss >> texturePath;
+                    if (!texturePath.empty())
+                    {
+                        GLuint texID = LoadTexture(texturePath, directory);
+                        if (texID != 0)
+                        {
+                            Texture texture;
+                            texture.id = texID;
+                            texture.type = "texture_normal";
+                            texture.path = texturePath;
+                            textures.push_back(texture);
+                        }
+                    }
+                }
+                // Add more texture types as needed
             }
+
             mtlFile.close();
         }
         else
         {
-            DEBUG_PRINT("[AssetManager] Failed to open MTL file: %s", mtlFileName.c_str());
+            std::cerr << "[AssetManager] Failed to open MTL file: " << mtlFileName << std::endl;
         }
-    }
-
-    if (texturePath.empty())
-    {
-        DEBUG_PRINT("[AssetManager] No texture found for OBJ:  %s", path.c_str());
     }
     else
     {
-        DEBUG_PRINT("[AssetManager] Texture for OBJ:  %s%s", directory.c_str(), texturePath.c_str());
+        std::cout << "[AssetManager] No MTL file specified for OBJ: " << path << std::endl;
+    }
+
+    if (textures.empty())
+    {
+        std::cout << "[AssetManager] No textures found for OBJ: " << path << std::endl;
+    }
+    else
+    {
+        std::cout << "[AssetManager] Loaded " << textures.size() << " textures for OBJ: " << path << std::endl;
     }
 
     // Create Model object
     Model *model = new Model();
+    model->textures = textures;
 
-    // Populate vertices
+    // Populate vertices with unique vertices
     std::unordered_map<std::string, unsigned int> uniqueVertices;
+    uniqueVertices.reserve(vertexIndices.size());
+
+    model->vertices.reserve(vertexIndices.size());
+    model->indices.reserve(vertexIndices.size());
+
     for (size_t i = 0; i < vertexIndices.size(); ++i)
     {
         std::ostringstream keyStream;
         keyStream << vertexIndices[i] << "/" << texCoordIndices[i] << "/" << normalIndices[i];
         std::string key = keyStream.str();
 
-        if (uniqueVertices.find(key) == uniqueVertices.end())
+        auto it = uniqueVertices.find(key);
+        if (it == uniqueVertices.end())
         {
             Vertex vertex;
             // OBJ indices are 1-based
@@ -329,7 +459,7 @@ Model *LoadModelFromList(const std::string &path)
             vertex.position[1] = temp_positions[(vertexIndices[i] - 1) * 3 + 1];
             vertex.position[2] = temp_positions[(vertexIndices[i] - 1) * 3 + 2];
 
-            if (!temp_texCoords.empty())
+            if (!temp_texCoords.empty() && texCoordIndices[i] > 0)
             {
                 vertex.texCoord[0] = temp_texCoords[(texCoordIndices[i] - 1) * 2];
                 vertex.texCoord[1] = temp_texCoords[(texCoordIndices[i] - 1) * 2 + 1];
@@ -340,7 +470,7 @@ Model *LoadModelFromList(const std::string &path)
                 vertex.texCoord[1] = 0.0f;
             }
 
-            if (!temp_normals.empty())
+            if (!temp_normals.empty() && normalIndices[i] > 0)
             {
                 vertex.normal[0] = temp_normals[(normalIndices[i] - 1) * 3];
                 vertex.normal[1] = temp_normals[(normalIndices[i] - 1) * 3 + 1];
@@ -360,7 +490,7 @@ Model *LoadModelFromList(const std::string &path)
         }
         else
         {
-            model->indices.push_back(uniqueVertices[key]);
+            model->indices.push_back(it->second);
         }
     }
 
@@ -379,56 +509,17 @@ Model *LoadModelFromList(const std::string &path)
 
     // Vertex positions
     glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)0);
     // Texture coordinates
     glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *)(3 * sizeof(float)));
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)(3 * sizeof(float)));
     // Normals
     glEnableVertexAttribArray(2);
-    glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *)(5 * sizeof(float)));
+    glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)(5 * sizeof(float)));
 
     glBindVertexArray(0);
 
-    // Load texture if available
-    if (!texturePath.empty())
-    {
-        int width, height, channels;
-        unsigned char *data = stbi_load((directory + texturePath).c_str(), &width, &height, &channels, 0);
-        if (!data)
-        {
-            DEBUG_PRINT("[AssetManager] stb_image failed to load texture: %s", (directory + texturePath).c_str());
-        }
-        else
-        {
-            GLenum format = GL_RGBA;
-            if (channels == 1)
-                format = GL_RED;
-            else if (channels == 3)
-                format = GL_RGB;
-            // if channels == 4, already GL_RGBA
+    // The textures are already loaded and stored in the model->textures vector
 
-            glGenTextures(1, &model->textureID);
-            glBindTexture(GL_TEXTURE_2D, model->textureID);
-
-            glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0,
-                         format, GL_UNSIGNED_BYTE, data);
-            glGenerateMipmap(GL_TEXTURE_2D);
-
-            // Set texture params
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-            glBindTexture(GL_TEXTURE_2D, 0);
-            stbi_image_free(data);
-        }
-    }
-    else
-    {
-        model->textureID = 0; // No texture
-    }
-
-    // Return the Model pointer as void*
     return model;
 }

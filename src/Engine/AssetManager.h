@@ -34,17 +34,18 @@ struct Vertex
     float normal[3];
 };
 
-struct Model
-{
+// Define a Texture structure
+struct Texture {
+    GLuint id;
+    std::string type;
+    std::string path;
+};
+
+struct Model {
     std::vector<Vertex> vertices;
     std::vector<unsigned int> indices;
-    GLuint vao;
-    GLuint vbo;
-    GLuint ebo;
-    GLuint textureID;
-
-    Model()
-        : vao(0), vbo(0), ebo(0), textureID(0) {}
+    std::vector<Texture> textures;
+    GLuint vao, vbo, ebo;
 };
 
 // The main AssetManager

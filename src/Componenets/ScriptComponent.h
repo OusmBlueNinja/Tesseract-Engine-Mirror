@@ -26,7 +26,11 @@ public:
 
     // Script management methods
     bool Initialize();
-    void Update(float deltaTime);
+    virtual void Update(float deltaTime);
+
+
+    void Init();
+
 
 
 private:
