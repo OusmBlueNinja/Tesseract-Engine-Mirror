@@ -11,7 +11,7 @@ local new_rotation = 0
 -- Variables for bobbing effect
 local initial_position = {x = 0, y = 0, z = 0} -- To store the gun's initial position
 local bobAmplitude = 0.5 -- Amplitude of the bobbing (units)
-local bobFrequency = 0.1 -- Frequency of the bobbing (oscillations per second)
+local bobFrequency = 0.5 -- Frequency of the bobbing (oscillations per second)
 
 -- Reference to the Gun GameObject and its Transform component
 local gun = nil

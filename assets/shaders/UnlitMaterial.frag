@@ -10,39 +10,20 @@ uniform TextureArray uTextures;          // Array of diffuse textures
 uniform int uNumDiffuseTextures;         // Number of active diffuse textures
 
 // Input variables from the vertex shader
-in vec2 TexCoords;    // Texture coordinates
+in vec2 TexCoords;       // Texture coordinates
+flat in int TextureIndex; // Texture index for this fragment
 
 // Output fragment color
 out vec4 FragColor;
 
 void main()
 {
-    // Define grid dimensions
-    const int gridCols = 8; // Number of columns in the grid
-    const int gridRows = 4; // Number of rows in the grid
-    const float gridWidth = 1.0 / float(gridCols);
-    const float gridHeight = 1.0 / float(gridRows);
-    
-    // Calculate grid cell indices based on TexCoords
-    int col = int(floor(TexCoords.x / gridWidth));
-    int row = int(floor(TexCoords.y / gridHeight));
-    
-    // Clamp indices to grid boundaries to prevent out-of-range access
-    col = clamp(col, 0, gridCols - 1);
-    row = clamp(row, 0, gridRows - 1);
-    
-    // Calculate texture index based on row and column
-    int texIndex = row * gridCols + col;
-    
-    // Clamp texture index to the number of active textures
-    texIndex = clamp(texIndex, 0, uNumDiffuseTextures - 1);
-    
-    // Calculate local texture coordinates within the grid cell
-    vec2 localTexCoords = fract(TexCoords / vec2(gridWidth, gridHeight));
-    
-    // Sample the selected texture using localTexCoords
-    vec4 color = texture(uTextures.texture_diffuse[texIndex], localTexCoords);
-    
+    // Clamp the texture index to prevent out-of-bounds access
+    int texIndex = clamp(TextureIndex, 0, uNumDiffuseTextures - 1);
+
+    // Sample the texture using the provided index and texture coordinates
+    vec4 sampledColor = texture(uTextures.texture_diffuse[texIndex], TexCoords);
+
     // Set the final fragment color
-    FragColor = color;
+    FragColor = sampledColor;
 }

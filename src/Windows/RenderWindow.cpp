@@ -18,7 +18,7 @@ extern std::vector<std::shared_ptr<GameObject>> g_GameObjects;
 
 #define CAM_FOV 45.0f
 #define CAM_NEAR_PLAIN 0.1f
-#define CAM_FAR_PLAIN 1000.0f
+#define CAM_FAR_PLAIN 2048.0f
 
 // Include your AssetManager & Shader headers
 #include "Engine/AssetManager.h"
@@ -400,7 +400,7 @@ void RenderWindow::RenderSceneToFBO(bool *GameRunning)
     // Use our loaded shader
     if (!m_ShaderPtr)
     {
-        std::cerr << "[RenderWindow] Shader pointer is null. Cannot render." << std::endl;
+        DEBUG_PRINT("[RenderWindow] Shader pointer is null. Cannot render.");
         m_FBO.Unbind();
         return; // Can't render without a shader
     }
@@ -447,7 +447,7 @@ void RenderWindow::RenderSceneToFBO(bool *GameRunning)
             // Validate VAO
             if (mesh->vao == 0)
             {
-                std::cerr << "[RenderWindow] Warning: Mesh VAO is not initialized." << std::endl;
+                DEBUG_PRINT("[RenderWindow] Warning: Mesh VAO is not initialized.");
                 continue;
             }
 
@@ -472,7 +472,7 @@ void RenderWindow::RenderSceneToFBO(bool *GameRunning)
             }
             else
             {
-                std::cerr << "[RenderWindow] Warning: Uniform 'uMVP' not found in shader." << std::endl;
+                DEBUG_PRINT("[RenderWindow] Warning: Uniform 'uMVP' not found in shader.");
             }
 
             // Pass Model matrix to the shader
@@ -483,7 +483,7 @@ void RenderWindow::RenderSceneToFBO(bool *GameRunning)
             }
             else
             {
-                std::cerr << "[RenderWindow] Warning: Uniform 'uModel' not found in shader." << std::endl;
+                DEBUG_PRINT("[RenderWindow] Warning: Uniform 'uModel' not found in shader.");
             }
 
             // -----------------------------------
@@ -507,7 +507,6 @@ void RenderWindow::RenderSceneToFBO(bool *GameRunning)
                     // Activate the appropriate texture unit
                     glActiveTexture(GL_TEXTURE0 + textureUnit);
                     glBindTexture(GL_TEXTURE_2D, texture.id);
-                    CheckOpenGLError("After glBindTexture");
 
                     // Construct the uniform name dynamically (e.g., "uTextures.texture_diffuse[0]")
                     std::string uniformName = "uTextures.texture_diffuse[" + std::to_string(textureUnit) + "]";
@@ -516,12 +515,6 @@ void RenderWindow::RenderSceneToFBO(bool *GameRunning)
                     if (texLoc != -1)
                     {
                         glUniform1i(texLoc, textureUnit);
-                        CheckOpenGLError("After glUniform1i for texture");
-                    }
-                    else
-                    {
-                        std::cerr << "[RenderWindow] Warning: Uniform '" << uniformName 
-                                  << "' not found in shader." << std::endl;
                     }
 
                     textureUnit++;
@@ -549,7 +542,7 @@ void RenderWindow::RenderSceneToFBO(bool *GameRunning)
             }
             else
             {
-                std::cerr << "[RenderWindow] Warning: Uniform 'uNumDiffuseTextures' not found in shader." << std::endl;
+                DEBUG_PRINT("[RenderWindow] Warning: Uniform 'uNumDiffuseTextures' not found in shader.");
             }
 
             // -----------------------------------
