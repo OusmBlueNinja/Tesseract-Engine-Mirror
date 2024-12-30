@@ -391,14 +391,11 @@ void RenderWindow::RenderSceneToFBO(bool *GameRunning)
     // Bind the FBO
     m_FBO.Bind();
     glViewport(0, 0, m_LastWidth, m_LastHeight);
-    CheckOpenGLError("After glViewport");
 
     glEnable(GL_DEPTH_TEST);
-    CheckOpenGLError("After glEnable(GL_DEPTH_TEST)");
 
     glClearColor(0.f, 0.f, 0.f, 1.f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    CheckOpenGLError("After glClear");
 
     // Use our loaded shader
     if (!m_ShaderPtr)
@@ -410,7 +407,6 @@ void RenderWindow::RenderSceneToFBO(bool *GameRunning)
 
     m_ShaderPtr->Use();
     GLuint programID = m_ShaderPtr->GetProgramID();
-    CheckOpenGLError("After shader use");
 
     // Define view and projection matrices once
     std::shared_ptr<CameraComponent> activeCamera = nullptr;
@@ -504,8 +500,7 @@ void RenderWindow::RenderSceneToFBO(bool *GameRunning)
                 {
                     if (textureUnit >= MAX_DIFFUSE)
                     {
-                        std::cerr << "[RenderWindow] Warning: Exceeded maximum number of diffuse textures (" 
-                                  << MAX_DIFFUSE << ") for shader." << std::endl;
+                        DEBUG_PRINT("[RenderWindow] Warning: Exceeded maximum number of diffuse textures (%d) for shader.", MAX_DIFFUSE);
                         break; // Prevent exceeding the array bounds in the shader
                     }
 

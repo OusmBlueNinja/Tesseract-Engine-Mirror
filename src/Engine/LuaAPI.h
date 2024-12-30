@@ -63,6 +63,8 @@ private:
     // Lua state
     std::string ScriptPath;
 
+    static std::string m_ScriptName;
+
     lua_State *m_LuaState;
 
     // Last error message to prevent duplicate logging
@@ -98,5 +100,7 @@ private:
 
     // Binding functions for Engine table
     static int Lua_Engine_Log(lua_State *L);
+    static int Lua_Engine_ScriptName(lua_State *L);
+
     static int Lua_Engine_GetGameObjectByTag(lua_State *L);
 };

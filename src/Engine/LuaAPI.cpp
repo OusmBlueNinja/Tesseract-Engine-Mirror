@@ -14,12 +14,17 @@
 #include <cstring>
 #include <memory>
 #include <vector>
+#include <filesystem> // C++17 or later
+
+// TODO: Add camera component Meta Table
 
 // External LoggerWindow instance for logging
 extern LoggerWindow *g_LoggerWindow;
 
 // External GameObjects list
 extern std::vector<std::unique_ptr<GameObject>> g_GameObjects;
+
+std::string LuaManager::m_ScriptName = "LUA_UNDEFINED";
 
 // Constructor
 LuaManager::LuaManager()
@@ -55,6 +60,8 @@ bool LuaManager::Initialize(const std::string &scriptPath)
 
     ScriptPath = scriptPath;
 
+    m_ScriptName = std::filesystem::path(scriptPath).filename().string();
+
     // Create a new Lua state
     m_LuaState = luaL_newstate();
     if (!m_LuaState)
@@ -84,6 +91,10 @@ bool LuaManager::Initialize(const std::string &scriptPath)
     lua_getglobal(m_LuaState, "_T_Engine_Table");
     lua_pushcfunction(m_LuaState, Lua_Engine_Log);
     lua_setfield(m_LuaState, -2, "Log");
+
+    // Add the ScriptName binding
+    lua_pushcfunction(m_LuaState, Lua_Engine_ScriptName);
+    lua_setfield(m_LuaState, -2, "ScriptName");
 
     // Bind the GetGameObjectByTag function to the Engine table
     lua_pushcfunction(m_LuaState, Lua_Engine_GetGameObjectByTag);
@@ -290,48 +301,70 @@ void LuaManager::CallLuaFunction(std::string functionName)
     }
 }
 
+int LuaManager::Lua_Engine_ScriptName(lua_State *L)
+{
+
+    // Push the script name onto the Lua stack
+    lua_pushstring(L, m_ScriptName.c_str());
+
+    // Return 1 value (the string)
+    return 1;
+}
+
 // Binding function to log messages from Lua
 int LuaManager::Lua_Engine_Log(lua_State *L)
 {
     int argc = lua_gettop(L);
     if (argc < 1 || !lua_isstring(L, 1))
     {
-        lua_pushstring(L, "Engine.Log expects at least one string argument.");
-        lua_error(L);
-        return 0;
+        luaL_error(L, "Engine.Log expects at least one string argument.");
+        return 0; // This line won't be reached due to lua_error
     }
-    std::string message = lua_tostring(L, 1);
-    ImVec4 color = ImVec4(1.0f, 1.0f, 1.0f, 1.0f); // Default white
 
-    // Optional color table
+    // Retrieve the log message
+    const char *message = lua_tostring(L, 1);
+
+    // Prepend the script name
+    std::string formattedMessage = "[" + m_ScriptName + "]: " + message;
+
+    // Default color: white
+    ImVec4 color(1.0f, 1.0f, 1.0f, 1.0f);
+
+    // Check if a color table is provided
     if (argc >= 2 && lua_istable(L, 2))
     {
-        lua_getfield(L, 2, "r");
+        // Efficiently retrieve color components using numeric indices
+        // Assumes color table is an array: {r, g, b, a}
+        // lua_geti is faster than lua_getfield for numeric indices
+
+        // r (index 1)
+        lua_geti(L, 2, 1);
         if (lua_isnumber(L, -1))
-            color.x = lua_tonumber(L, -1);
+            color.x = static_cast<float>(lua_tonumber(L, -1));
+        lua_pop(L, 1); // Remove the value from the stack
+
+        // g (index 2)
+        lua_geti(L, 2, 2);
+        if (lua_isnumber(L, -1))
+            color.y = static_cast<float>(lua_tonumber(L, -1));
         lua_pop(L, 1);
 
-        lua_getfield(L, 2, "g");
+        // b (index 3)
+        lua_geti(L, 2, 3);
         if (lua_isnumber(L, -1))
-            color.y = lua_tonumber(L, -1);
+            color.z = static_cast<float>(lua_tonumber(L, -1));
         lua_pop(L, 1);
 
-        lua_getfield(L, 2, "b");
+        // a (index 4)
+        lua_geti(L, 2, 4);
         if (lua_isnumber(L, -1))
-            color.z = lua_tonumber(L, -1);
-        lua_pop(L, 1);
-
-        lua_getfield(L, 2, "a");
-        if (lua_isnumber(L, -1))
-            color.w = lua_tonumber(L, -1);
+            color.w = static_cast<float>(lua_tonumber(L, -1));
         lua_pop(L, 1);
     }
 
-    // Log the message
-    if (g_LoggerWindow)
-    {
-        g_LoggerWindow->AddLog(message.c_str(), std::optional<ImVec4>(color));
-    }
+    // Log the message with the specified color
+
+    g_LoggerWindow->AddLog(formattedMessage.c_str(), std::optional<ImVec4>(color));
 
     return 0; // No return values
 }
@@ -626,8 +659,6 @@ int LuaManager::Lua_TransformComponent_SetRotation(lua_State *L)
 
     return 0; // No return values
 }
-
-
 
 // Binding function to retrieve a ScriptComponent's script path
 int LuaManager::Lua_ScriptComponent_GetScriptPath(lua_State *L)
