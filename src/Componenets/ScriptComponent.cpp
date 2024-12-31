@@ -80,6 +80,8 @@ bool ScriptComponent::Initialize()
         return false;
     }
 
+    m_LuaManager.PrintEngineVariables();
+
     return true;
 }
 

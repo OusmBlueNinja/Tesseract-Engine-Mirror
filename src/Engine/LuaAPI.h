@@ -13,6 +13,8 @@ extern "C"
 // Include standard libraries
 #include <string>
 #include <optional>
+#include <variant>
+#include <vector>
 
 // Forward declarations to avoid circular dependencies
 class Component;
@@ -57,7 +59,10 @@ public:
 
     void CallLuaFunction(std::string functionName);
 
+    using LuaGlobalVariant = std::variant<int, float, std::string>;
 
+    std::vector<LuaGlobalVariant> GetGlobalVariables();
+    void PrintEngineVariables();
 
 private:
     // Lua state
