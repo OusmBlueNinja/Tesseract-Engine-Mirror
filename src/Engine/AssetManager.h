@@ -232,7 +232,7 @@ public:
 
 private:
     // Cache of already loaded assets: key = "type + path"
-    std::map<std::string, AssetVariant> m_AssetMap;
+    std::unordered_map<std::string, AssetVariant> m_AssetMap;
 
     AssetVariant loadAssetFromDisk(AssetType type, const std::string &path);
     // Generate the unique key
