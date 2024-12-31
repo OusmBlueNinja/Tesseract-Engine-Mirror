@@ -629,9 +629,8 @@ void InspectorWindow::Show()
                         ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "No model loaded.");
                     }
                 }
+                ImGui::Separator();
             }
-
-            ImGui::Spacing();
 
             if (script && g_SelectedObject)
             {

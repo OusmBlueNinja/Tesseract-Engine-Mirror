@@ -534,7 +534,7 @@ Model *LoadModelFromList(const std::string &path)
     }
     // Code to analyze
     auto end = std::chrono::high_resolution_clock::now();
-    g_LoggerWindow->AddLog("Loaded Mesh in %.6f seconds",
+    g_LoggerWindow->AddLog("[AssetManager] Loaded Mesh in %.6f seconds",
                            std::chrono::duration_cast<std::chrono::duration<double>>(end - start).count());
 
     DEBUG_PRINT("[AssetManager] Loaded model with %lld submeshes.", model->submeshes.size());
