@@ -25,6 +25,8 @@ extern LoggerWindow *g_LoggerWindow;
 extern std::vector<std::unique_ptr<GameObject>> g_GameObjects;
 
 std::string LuaManager::m_ScriptName = "LUA_UNDEFINED";
+std::unordered_map<std::string, LuaManager::LuaExposedVariant> LuaManager::m_ExposedVariables;
+
 
 // Constructor
 LuaManager::LuaManager()
@@ -92,6 +94,9 @@ bool LuaManager::Initialize(const std::string &scriptPath)
     lua_pushcfunction(m_LuaState, Lua_Engine_Log);
     lua_setfield(m_LuaState, -2, "Log");
 
+    lua_pushcfunction(m_LuaState, Lua_Engine_Expose);
+    lua_setfield(m_LuaState, -2, "Expose");
+
     // Add the ScriptName binding
     lua_pushcfunction(m_LuaState, Lua_Engine_ScriptName);
     lua_setfield(m_LuaState, -2, "ScriptName");
@@ -150,208 +155,122 @@ bool LuaManager::Initialize(const std::string &scriptPath)
     return true;
 }
 
-// Implementation of GetGlobalVariables
-std::vector<LuaManager::LuaGlobalVariant> LuaManager::GetGlobalVariables()
-{
-    std::vector<LuaManager::LuaGlobalVariant> globals;
+std::unordered_map<std::string, LuaManager::LuaExposedVariant> LuaManager::GetExposedVariables() {
+    return m_ExposedVariables;
+}
 
+
+
+void LuaManager::UpdateVariable(const std::string &name, const LuaManager::LuaExposedVariant &value) {
     if (!m_LuaState)
-    {
-        // Handle error: Lua state not initialized
-        if (g_LoggerWindow)
-        {
-            g_LoggerWindow->AddLog("LuaManager: Lua state is not initialized.",
-                                   std::optional<ImVec4>(ImVec4(1.0f, 0.0f, 0.0f, 1.0f)));
-        }
-        else
-        {
-            DEBUG_PRINT("LuaManager: Lua state is not initialized.");
-        }
-        return globals;
+        return;
+
+    // Update the variable in the map
+    m_ExposedVariables[name] = value;
+
+    // Push the variable to the Lua global environment
+    lua_pushglobaltable(m_LuaState); // Push the global table
+
+    // Push the variable name
+    lua_pushstring(m_LuaState, name.c_str());
+
+    // Push the new value based on its type
+    if (std::holds_alternative<int>(value)) {
+        lua_pushinteger(m_LuaState, std::get<int>(value));
+    } else if (std::holds_alternative<float>(value)) {
+        lua_pushnumber(m_LuaState, std::get<float>(value));
+    } else if (std::holds_alternative<std::string>(value)) {
+        lua_pushstring(m_LuaState, std::get<std::string>(value).c_str());
+    } else if (std::holds_alternative<bool>(value)) {
+        lua_pushboolean(m_LuaState, std::get<bool>(value));
+    } else {
+        lua_pop(m_LuaState, 1); // Clean up stack
+        return;
     }
 
-    // Push the global table onto the stack
-#if LUA_VERSION_NUM >= 502
-    lua_pushglobaltable(m_LuaState);
-#else
-    lua_pushvalue(m_LuaState, LUA_GLOBALSINDEX);
-#endif
+    // Set the variable in the Lua global environment
+    lua_settable(m_LuaState, -3);
 
-    // Start iterating with a nil key
-    lua_pushnil(m_LuaState); // First key
+    // Clean up stack
+    lua_pop(m_LuaState, 1);
+}
 
-    // Iterate over the global table
-    while (lua_next(m_LuaState, -2) != 0)
-    {
-        // Stack now contains key at -2 and value at -1
 
-        // Get the type of the value
-        int valueType = lua_type(m_LuaState, -1);
 
-        switch (valueType)
-        {
+
+int LuaManager::Lua_Engine_Expose(lua_State* L) {
+    // Check that at least two arguments are passed: name and value
+    if (lua_gettop(L) < 2) {
+        luaL_error(L, "Expose function requires at least two arguments: name and value");
+        return 0;
+    }
+
+    // First argument: variable name (string)
+    if (!lua_isstring(L, 1)) {
+        luaL_error(L, "First argument to Expose must be a string (variable name)");
+        return 0;
+    }
+
+    const char* varName = lua_tostring(L, 1);
+
+    // Second argument: variable value (supports int, float, string, bool)
+    LuaExposedVariant varValue;
+    int type = lua_type(L, 2);
+
+    switch (type) {
         case LUA_TNUMBER:
 #if LUA_VERSION_NUM >= 503
-            if (lua_isinteger(m_LuaState, -1))
-            {
-                lua_Integer intVal = lua_tointeger(m_LuaState, -1);
-                // Assuming you want to store as int
-                globals.emplace_back(static_cast<int>(intVal));
-            }
-            else
-            {
-                lua_Number numVal = lua_tonumber(m_LuaState, -1);
-                // Store as float (you might choose double instead)
-                globals.emplace_back(static_cast<float>(numVal));
-            }
-#else
-        {
-            lua_Number numVal = lua_tonumber(m_LuaState, -1);
-            // Lua 5.2 and earlier use double for all numbers
-            // Decide how to store: here, stored as float
-            globals.emplace_back(static_cast<float>(numVal));
-        }
+            if (lua_isinteger(L, 2)) {
+                varValue = static_cast<int>(lua_tointeger(L, 2));
+            } else
 #endif
+            {
+                varValue = static_cast<float>(lua_tonumber(L, 2));
+            }
             break;
-
         case LUA_TSTRING:
-        {
-            size_t len = 0;
-            const char *str = lua_tolstring(m_LuaState, -1, &len);
-            if (str)
-            {
-                globals.emplace_back(std::string(str, len));
-            }
-        }
-        break;
-
-        // Optionally handle other types or skip them
-        // For example, you might skip tables, functions, booleans, etc.
-        default:
-            // Skip other types
+            varValue = std::string(lua_tostring(L, 2));
             break;
-        }
-
-        // Pop the value, keep the key for the next iteration
-        lua_pop(m_LuaState, 1);
+        case LUA_TBOOLEAN:
+            varValue = static_cast<bool>(lua_toboolean(L, 2));
+            break;
+        default:
+            luaL_error(L, "Unsupported variable type for Expose");
+            return 0;
     }
 
-    // Pop the global table from the stack
-    lua_pop(m_LuaState, 1);
+    // Store the variable in the static m_ExposedVariables map
+    m_ExposedVariables[varName] = varValue;
 
-    return globals;
+    // Push the variable to the Lua global environment
+    lua_pushglobaltable(L);
+
+    lua_pushstring(L, varName); // Push the variable name
+
+    // Push the value to Lua based on its type
+    if (std::holds_alternative<int>(varValue)) {
+        lua_pushinteger(L, std::get<int>(varValue));
+    } else if (std::holds_alternative<float>(varValue)) {
+        lua_pushnumber(L, std::get<float>(varValue));
+    } else if (std::holds_alternative<std::string>(varValue)) {
+        lua_pushstring(L, std::get<std::string>(varValue).c_str());
+    } else if (std::holds_alternative<bool>(varValue)) {
+        lua_pushboolean(L, std::get<bool>(varValue));
+    } else {
+        lua_pop(L, 1); // Clean up stack
+        return 0;
+    }
+
+    // Set the variable in Lua global environment
+    lua_settable(L, -3);
+
+    // Clean up stack
+    lua_pop(L, 1);
+
+    return 0;
 }
 
-// Implementation of PrintEngineVariables
-void LuaManager::PrintEngineVariables() {
-    if (!m_LuaState) {
-        std::cerr << "LuaManager: Lua state is not initialized." << std::endl;
-        return;
-    }
 
-    // Push the _T_Engine_Variables table onto the stack
-    lua_getglobal(m_LuaState, "_T_Engine_Variables");
-    if (!lua_istable(m_LuaState, -1)) {
-        std::cerr << "LuaManager: _T_Engine_Variables is not a table or does not exist." << std::endl;
-        lua_pop(m_LuaState, 1); // Remove non-table value
-        return;
-    }
-
-    // Start iterating with a nil key
-    lua_pushnil(m_LuaState); // First key
-
-    std::cout << "Engine Variables:" << std::endl;
-
-    // Iterate over the _T_Engine_Variables table
-    while (lua_next(m_LuaState, -2) != 0) {
-        // Stack now contains key at -2 and value at -1
-
-        // Get the key
-        const char* key = nullptr;
-        if (lua_type(m_LuaState, -2) == LUA_TSTRING) {
-            key = lua_tostring(m_LuaState, -2);
-        } else {
-            // For non-string keys, skip
-            lua_pop(m_LuaState, 1); // Remove value, keep key for next iteration
-            continue;
-        }
-
-        // Get the type of the value
-        int valueType = lua_type(m_LuaState, -1);
-
-        // Print the key and value based on type
-        std::cout << key << " = ";
-
-        switch (valueType) {
-            case LUA_TNUMBER:
-#if LUA_VERSION_NUM >= 503
-                if (lua_isinteger(m_LuaState, -1)) {
-                    lua_Integer intVal = lua_tointeger(m_LuaState, -1);
-                    std::cout << intVal;
-                } else
-#endif
-                {
-                    lua_Number numVal = lua_tonumber(m_LuaState, -1);
-                    std::cout << numVal;
-                }
-                break;
-
-            case LUA_TSTRING:
-                {
-                    const char* str = lua_tostring(m_LuaState, -1);
-                    if (str) {
-                        std::cout << "\"" << str << "\"";
-                    } else {
-                        std::cout << "nil";
-                    }
-                }
-                break;
-
-            case LUA_TBOOLEAN:
-                {
-                    int boolVal = lua_toboolean(m_LuaState, -1);
-                    std::cout << (boolVal ? "true" : "false");
-                }
-                break;
-
-            case LUA_TTABLE:
-                std::cout << "table";
-                break;
-
-            case LUA_TFUNCTION:
-                std::cout << "function";
-                break;
-
-            case LUA_TUSERDATA:
-                std::cout << "userdata";
-                break;
-
-            case LUA_TLIGHTUSERDATA:
-                std::cout << "lightuserdata";
-                break;
-
-            case LUA_TTHREAD:
-                std::cout << "thread";
-                break;
-
-            case LUA_TNIL:
-                std::cout << "nil";
-                break;
-
-            default:
-                std::cout << "unknown";
-                break;
-        }
-
-        std::cout << std::endl;
-
-        // Pop the value, keep the key for the next iteration
-        lua_pop(m_LuaState, 1);
-    }
-
-    // Pop the _T_Engine_Variables table from the stack
-    lua_pop(m_LuaState, 1);
-}
 
 // Update function called every frame
 void LuaManager::Update(float deltaTime)

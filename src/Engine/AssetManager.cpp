@@ -63,7 +63,7 @@ AssetManager::AssetVariant AssetManager::loadAssetFromDisk(AssetType type, const
     }
     case AssetType::SHADER:
     {
-        Shader* shaderPtr = LoadShaderFromList(path); // Returns Shader*
+        Shader *shaderPtr = LoadShaderFromList(path); // Returns Shader*
         if (shaderPtr != nullptr)
         {
             // It's essential to ensure that shaderPtr is dynamically allocated and not managed elsewhere
@@ -76,7 +76,7 @@ AssetManager::AssetVariant AssetManager::loadAssetFromDisk(AssetType type, const
     }
     case AssetType::MODEL:
     {
-        Model* modelPtr = LoadModelFromList(path); // Returns Model*
+        Model *modelPtr = LoadModelFromList(path); // Returns Model*
         if (modelPtr != nullptr)
         {
             // It's essential to ensure that modelPtr is dynamically allocated and not managed elsewhere
@@ -139,7 +139,7 @@ GLuint LoadTextureFromList(const std::string &path)
     return texID;
 }
 
-Shader* LoadShaderFromList(const std::string &path)
+Shader *LoadShaderFromList(const std::string &path)
 {
 
     // Build actual paths from the base path
@@ -160,12 +160,6 @@ Shader* LoadShaderFromList(const std::string &path)
     return newShader;
 }
 
-
-
-
-
-
-
 GLuint LoadTexture(const std::string &path, const std::string &directory)
 {
     std::string fullPath = directory + path;
@@ -173,7 +167,7 @@ GLuint LoadTexture(const std::string &path, const std::string &directory)
     unsigned char *data = stbi_load(fullPath.c_str(), &width, &height, &channels, 0);
     if (!data)
     {
-        DEBUG_PRINT("[AssetManager] failed to load texture: %s: %s", fullPath.c_str(),stbi_failure_reason());
+        DEBUG_PRINT("[AssetManager] failed to load texture: %s: %s", fullPath.c_str(), stbi_failure_reason());
         return 0;
     }
 
@@ -190,15 +184,15 @@ GLuint LoadTexture(const std::string &path, const std::string &directory)
     GLuint textureID;
     glGenTextures(1, &textureID);
     glBindTexture(GL_TEXTURE_2D, textureID);
-    
+
     glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0,
                  format, GL_UNSIGNED_BYTE, data);
     glGenerateMipmap(GL_TEXTURE_2D);
 
     // Set texture parameters
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);   
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);   
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR); 
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
     glBindTexture(GL_TEXTURE_2D, 0);
@@ -207,15 +201,31 @@ GLuint LoadTexture(const std::string &path, const std::string &directory)
     return textureID;
 }
 
+#include <unordered_map>
 
-
-
-
-
-
-
-Model* LoadModelFromList(const std::string &path)
+// Custom hash function for Vertex
+struct VertexHash
 {
+    std::size_t operator()(const Vertex &v) const
+    {
+        std::size_t h1 = std::hash<float>{}(v.position[0]);
+        std::size_t h2 = std::hash<float>{}(v.position[1]);
+        std::size_t h3 = std::hash<float>{}(v.position[2]);
+        std::size_t h4 = std::hash<float>{}(v.texCoord[0]);
+        std::size_t h5 = std::hash<float>{}(v.texCoord[1]);
+        std::size_t h6 = std::hash<float>{}(v.normal[0]);
+        std::size_t h7 = std::hash<float>{}(v.normal[1]);
+        std::size_t h8 = std::hash<float>{}(v.normal[2]);
+        return h1 ^ h2 ^ h3 ^ h4 ^ h5 ^ h6 ^ h7 ^ h8;
+    }
+};
+
+// Hash map for deduplication
+std::unordered_map<Vertex, unsigned int, VertexHash> vertexCache;
+
+Model *LoadModelFromList(const std::string &path)
+{
+    auto start = std::chrono::high_resolution_clock::now();
 
     std::ifstream objFile(path);
     if (!objFile.is_open())
@@ -227,6 +237,10 @@ Model* LoadModelFromList(const std::string &path)
     std::vector<float> temp_texCoords;
     std::vector<float> temp_normals;
 
+    temp_positions.reserve(100000);
+    temp_texCoords.reserve(100000);
+    temp_normals.reserve(100000);
+
     std::string directory;
     size_t lastSlash = path.find_last_of("/\\");
     if (lastSlash != std::string::npos)
@@ -234,7 +248,6 @@ Model* LoadModelFromList(const std::string &path)
     else
         directory = "";
 
-    
     std::string currentMaterial = "default";
 
     // Map material name to Submesh
@@ -243,7 +256,14 @@ Model* LoadModelFromList(const std::string &path)
 
     std::string line;
     std::string mtlFileName;
-    while (std::getline(objFile, line))
+
+    // Read file into memory for faster line parsing
+    std::stringstream fileBuffer;
+    fileBuffer << objFile.rdbuf();
+    objFile.close();
+    DEBUG_PRINT("OBJ READ");
+
+    while (std::getline(fileBuffer, line))
     {
         if (line.empty() || line[0] == '#')
             continue; // Skip empty lines and comments
@@ -296,32 +316,25 @@ Model* LoadModelFromList(const std::string &path)
             while (iss >> vertexStr)
             {
                 unsigned int vIdx = 0, tIdx = 0, nIdx = 0;
-                size_t firstSlash = vertexStr.find('/');
-                size_t secondSlash = vertexStr.find('/', firstSlash + 1);
+                const char *ptr = vertexStr.c_str();
 
-                if (firstSlash == std::string::npos)
+                // Parse vertex index (vIdx)
+                vIdx = std::strtol(ptr, const_cast<char **>(&ptr), 10);
+
+                if (*ptr == '/')
                 {
-                    // Format: f v1 v2 v3
-                    vIdx = std::stoi(vertexStr);
-                }
-                else if (secondSlash == std::string::npos)
-                {
-                    // Format: f v1/vt1 v2/vt2 v3/vt3
-                    vIdx = std::stoi(vertexStr.substr(0, firstSlash));
-                    tIdx = std::stoi(vertexStr.substr(firstSlash + 1));
-                }
-                else if (secondSlash > firstSlash + 1)
-                {
-                    // Format: f v1/vt1/vn1 v2/vt2/vn2 v3/vt3/vn3
-                    vIdx = std::stoi(vertexStr.substr(0, firstSlash));
-                    tIdx = std::stoi(vertexStr.substr(firstSlash + 1, secondSlash - firstSlash - 1));
-                    nIdx = std::stoi(vertexStr.substr(secondSlash + 1));
-                }
-                else
-                {
-                    // Format: f v1//vn1 v2//vn2 v3//vn3
-                    vIdx = std::stoi(vertexStr.substr(0, firstSlash));
-                    nIdx = std::stoi(vertexStr.substr(secondSlash + 1));
+                    ++ptr; // Skip the first '/'
+                    if (*ptr != '/')
+                    {
+                        // Parse texture index (tIdx)
+                        tIdx = std::strtol(ptr, const_cast<char **>(&ptr), 10);
+                    }
+                    if (*ptr == '/')
+                    {
+                        ++ptr; // Skip the second '/'
+                        // Parse normal index (nIdx)
+                        nIdx = std::strtol(ptr, const_cast<char **>(&ptr), 10);
+                    }
                 }
 
                 faceVertices.emplace_back(vIdx, tIdx, nIdx);
@@ -333,8 +346,10 @@ Model* LoadModelFromList(const std::string &path)
                 // Current material's submesh
                 Submesh &currentSubmesh = materialToSubmesh[currentMaterial];
 
-                auto addVertex = [&](unsigned int v, unsigned int t, unsigned int n) -> unsigned int {
+                auto addVertex = [&](unsigned int v, unsigned int t, unsigned int n) -> unsigned int
+                {
                     Vertex vertex;
+
                     // OBJ indices are 1-based
                     vertex.position[0] = temp_positions[(v - 1) * 3];
                     vertex.position[1] = temp_positions[(v - 1) * 3 + 1];
@@ -364,16 +379,18 @@ Model* LoadModelFromList(const std::string &path)
                         vertex.normal[2] = 0.0f;
                     }
 
-                    // Check if the vertex already exists in the submesh
-                    auto it = std::find(currentSubmesh.vertices.begin(), currentSubmesh.vertices.end(), vertex);
-                    if (it != currentSubmesh.vertices.end())
+                    // Use the hash map to check for duplicates
+                    auto it = vertexCache.find(vertex);
+                    if (it != vertexCache.end())
                     {
-                        return static_cast<unsigned int>(std::distance(currentSubmesh.vertices.begin(), it));
+                        return it->second;
                     }
                     else
                     {
+                        unsigned int newIndex = static_cast<unsigned int>(currentSubmesh.vertices.size());
                         currentSubmesh.vertices.push_back(vertex);
-                        return static_cast<unsigned int>(currentSubmesh.vertices.size() - 1);
+                        vertexCache[vertex] = newIndex;
+                        return newIndex;
                     }
                 };
 
@@ -388,7 +405,10 @@ Model* LoadModelFromList(const std::string &path)
         }
     }
 
-    objFile.close();
+    temp_positions.shrink_to_fit();
+    temp_texCoords.shrink_to_fit();
+    temp_normals.shrink_to_fit();
+    DEBUG_PRINT("MTL READ");
 
     // Load MTL file if specified
     std::unordered_map<std::string, std::vector<Texture>> materialTexturesMap;
@@ -476,6 +496,8 @@ Model* LoadModelFromList(const std::string &path)
     {
     }
 
+    DEBUG_PRINT("MTL SUBASSIGN");
+
     // Assign textures to submeshes based on their material
     for (auto &pair : materialToSubmesh)
     {
@@ -504,13 +526,18 @@ Model* LoadModelFromList(const std::string &path)
     Model *model = new Model();
 
     // Move submeshes to the model
+    DEBUG_PRINT("SUB MIGRATE");
+
     for (auto &pair : materialToSubmesh)
     {
         model->submeshes.emplace_back(std::move(pair.second));
     }
+    // Code to analyze
+    auto end = std::chrono::high_resolution_clock::now();
+    g_LoggerWindow->AddLog("Loaded Mesh in %.6f seconds",
+                           std::chrono::duration_cast<std::chrono::duration<double>>(end - start).count());
 
     DEBUG_PRINT("[AssetManager] Loaded model with %lld submeshes.", model->submeshes.size());
-
 
     return model;
 }

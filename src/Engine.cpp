@@ -260,7 +260,7 @@ void MyEngine::Run()
             m_PerformanceWindow->Show(m_Fps, m_Ms); // FPS & ms
             m_LoggerWindow->Show();                 // Logs
             m_SceneWindow->Show();
-            m_luaEditor->Show();
+            //m_luaEditor->Show();
 
             if (m_showProfiler)
             {

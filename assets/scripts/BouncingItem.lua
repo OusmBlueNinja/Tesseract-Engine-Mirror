@@ -12,9 +12,9 @@ local rotationSpeed = 25 -- Degrees per second for spinning
 local new_rotation = 0
 
 -- Variables for bobbing effect
-local initial_position = {x = 0, y = 0, z = 0} -- To store the gun's initial position
-local bobAmplitude = 5 -- Amplitude of the bobbing (units)
-local bobFrequency = 0.5 -- Frequency of the bobbing (oscillations per second)
+local initial_position = { x = 0, y = 0, z = 0 } -- To store the gun's initial position
+local bobAmplitude = 5                         -- Amplitude of the bobbing (units)
+local bobFrequency = 0.5                       -- Frequency of the bobbing (oscillations per second)
 
 -- Reference to the Gun GameObject and its Transform component
 local gun = nil
@@ -22,9 +22,21 @@ local transform = nil
 
 local TAU = Math.constants.TAU
 
+
+
+
+
 function OnInit()
     local startTime = os.clock()
-    Engine.Log("Init START", {1.0,1.0,1.0,1.0})
+
+    Engine.Expose("GameObjectName", GameObjectName)
+    Engine.Expose("new_rotation", new_rotation)
+    Engine.Expose("elapsedTime", elapsedTime)
+    Engine.Expose("bobAmplitude", bobAmplitude)
+    Engine.Expose("bobFrequency", bobFrequency)
+
+
+    Engine.Log("Init START", { 1.0, 1.0, 1.0, 1.0 })
 
 
 
@@ -34,41 +46,43 @@ function OnInit()
             transform = gun:GetComponent("Transform")
             if transform then
                 local pos = transform:GetPosition()
-                initial_position = {x = pos.x, y = pos.y, z = pos.z}
-                Engine.Log("Gun found and initial position updated.", {1, 1, 1, 1})
+                initial_position = { x = pos.x, y = pos.y, z = pos.z }
+                Engine.Log("Gun found and initial position updated.", { 1, 1, 1, 1 })
             else
-                Engine.Log("Transform component not found on Gun.", {1, 1, 0, 1})
+                Engine.Log("Transform component not found on Gun.", { 1, 1, 0, 1 })
                 return
             end
         else
-            Engine.Log("Gun GameObject still not found.", {1, 1, 0, 1})
+            Engine.Log("Gun GameObject still not found.", { 1, 1, 0, 1 })
             return
         end
     elseif not transform then
         transform = gun:GetComponent("Transform")
         if transform then
             local pos = transform:GetPosition()
-            initial_position = {x = pos.x, y = pos.y, z = pos.z}
-            Engine.Log("Transform component found and initial position updated.", {1, 1, 1, 1})
+            initial_position = { x = pos.x, y = pos.y, z = pos.z }
+            Engine.Log("Transform component found and initial position updated.", { 1, 1, 1, 1 })
         else
-            Engine.Log("Transform component still not found on Gun.", {1, 1, 0, 1})
+            Engine.Log("Transform component still not found on Gun.", { 1, 1, 0, 1 })
             return
         end
     end
-    Engine.Log("Init OK", {0.0,1.0,0.0,1.0})
+    Engine.Log("Init OK", { 0.0, 1.0, 0.0, 1.0 })
 
-    
+
     local endTime = os.clock()
 
 
-    Engine.Log(string.format("Time to load: %f", endTime-startTime))
-
-
-
+    Engine.Log(string.format("Time to load: %fms", (endTime - startTime)*1000))
 end
 
 -- Update function called every frame
 function OnUpdate(deltaTime)
+    Engine.Expose("GameObjectName", GameObjectName)
+    Engine.Expose("new_rotation", new_rotation)
+    Engine.Expose("elapsedTime", elapsedTime)
+    Engine.Expose("bobAmplitude", bobAmplitude)
+    Engine.Expose("bobFrequency", bobFrequency)
     -- Ensure that the Gun and its Transform component are valid
     if not gun then
         gun = Engine.GetGameObjectByTag(GameObjectName)
@@ -76,10 +90,10 @@ function OnUpdate(deltaTime)
             transform = gun:GetComponent("Transform")
             if transform then
                 local pos = transform:GetPosition()
-                initial_position = {x = pos.x, y = pos.y, z = pos.z}
-                Engine.Log("Gun found and initial position updated.", {1, 1, 1, 1})
+                initial_position = { x = pos.x, y = pos.y, z = pos.z }
+                Engine.Log("Gun found and initial position updated.", { 1, 1, 1, 1 })
             else
-                Engine.Log("Transform component not found on Gun.", {1, 1, 0, 1})
+                Engine.Log("Transform component not found on Gun.", { 1, 1, 0, 1 })
                 return
             end
         else
@@ -89,8 +103,8 @@ function OnUpdate(deltaTime)
         transform = gun:GetComponent("Transform")
         if transform then
             local pos = transform:GetPosition()
-            initial_position = {x = pos.x, y = pos.y, z = pos.z}
-            Engine.Log("Transform component found and initial position updated.", {1, 1, 1, 1})
+            initial_position = { x = pos.x, y = pos.y, z = pos.z }
+            Engine.Log("Transform component found and initial position updated.", { 1, 1, 1, 1 })
         else
             return
         end
@@ -110,9 +124,9 @@ function OnUpdate(deltaTime)
 
     -- Define the new rotation (spinning around the Y-axis)
     local rotation = {
-        x = 0, -- Preserving existing rotation on X-axis
+        x = 0,            -- Preserving existing rotation on X-axis
         y = new_rotation, -- Updated rotation on Y-axis for spinning
-        z = 0 -- Preserving existing rotation on Z-axis
+        z = 0             -- Preserving existing rotation on Z-axis
     }
 
     -- Apply the new rotation to the Transform component
@@ -124,9 +138,9 @@ function OnUpdate(deltaTime)
 
     -- Define the new position by adding the bobbing offset to the initial Y position
     local new_position = {
-        x = initial_position.x, -- No change on X-axis
+        x = initial_position.x,             -- No change on X-axis
         y = initial_position.y + bobOffset, -- Bouncing up and down on Y-axis
-        z = initial_position.z -- No change on Z-axis
+        z = initial_position.z              -- No change on Z-axis
     }
 
     -- Apply the new position to the Transform component

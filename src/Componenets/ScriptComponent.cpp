@@ -6,12 +6,9 @@
 #include "gcml.h"
 
 // External pointer to LoggerWindow (Assuming it's defined globally)
-extern LoggerWindow* g_LoggerWindow;
-
-
+extern LoggerWindow *g_LoggerWindow;
 
 const std::string ScriptComponent::name = "ScriptComponent";
-
 
 ScriptComponent::ScriptComponent()
     : ScriptPath("assets/scripts/script.lua"), m_LastErrorMessage("")
@@ -45,17 +42,16 @@ YAML::Node ScriptComponent::Serialize()
     return node;
 }
 
-void ScriptComponent::Deserialize(const YAML::Node& node)
+void ScriptComponent::Deserialize(const YAML::Node &node)
 {
     if (node["ScriptPath"])
     {
         ScriptPath = node["ScriptPath"].as<std::string>();
-    } 
-    
+    }
+
     DEBUG_PRINT("Script Path: %s", ScriptPath.c_str());
 
     Initialize();
-
 }
 
 bool ScriptComponent::Initialize()
@@ -80,8 +76,6 @@ bool ScriptComponent::Initialize()
         return false;
     }
 
-    m_LuaManager.PrintEngineVariables();
-
     return true;
 }
 
@@ -91,9 +85,18 @@ void ScriptComponent::Update(float deltaTime)
     m_LuaManager.Update(deltaTime);
 }
 
-
 void ScriptComponent::Init()
 {
     // Call the Update method of LuaManager
     m_LuaManager.CallLuaFunction("OnInit");
+}
+
+void ScriptComponent::UpdateVariable(const std::string &name, const LuaManager::LuaExposedVariant &value)
+{
+    m_LuaManager.UpdateVariable(name, value);
+}
+
+std::unordered_map<std::string, LuaManager::LuaExposedVariant> ScriptComponent::GetExposedVariables()
+{
+    return m_LuaManager.GetExposedVariables();
 }

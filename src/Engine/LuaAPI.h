@@ -14,6 +14,7 @@ extern "C"
 #include <string>
 #include <optional>
 #include <variant>
+#include <unordered_map>
 #include <vector>
 
 // Forward declarations to avoid circular dependencies
@@ -59,10 +60,14 @@ public:
 
     void CallLuaFunction(std::string functionName);
 
-    using LuaGlobalVariant = std::variant<int, float, std::string>;
+    using LuaExposedVariant = std::variant<int, float, std::string, bool>;
 
-    std::vector<LuaGlobalVariant> GetGlobalVariables();
-    void PrintEngineVariables();
+
+    
+    // Retrieve exposed variables
+    std::unordered_map<std::string, LuaExposedVariant> GetExposedVariables();
+    void UpdateVariable(const std::string& name, const LuaExposedVariant& value);
+
 
 private:
     // Lua state
@@ -71,6 +76,9 @@ private:
     static std::string m_ScriptName;
 
     lua_State *m_LuaState;
+
+    static std::unordered_map<std::string, LuaExposedVariant> m_ExposedVariables;
+
 
     // Last error message to prevent duplicate logging
     std::string m_LastErrorMessage;
@@ -106,6 +114,9 @@ private:
     // Binding functions for Engine table
     static int Lua_Engine_Log(lua_State *L);
     static int Lua_Engine_ScriptName(lua_State *L);
-
     static int Lua_Engine_GetGameObjectByTag(lua_State *L);
+    static int Lua_Engine_Expose(lua_State* L);
+
+    
+
 };

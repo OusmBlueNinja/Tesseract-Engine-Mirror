@@ -558,7 +558,6 @@ void InspectorWindow::Show()
                         // Optionally, trigger reloading the mesh if the path changes
                         // Example:
                         std::shared_ptr<Model> model = g_AssetManager->loadAsset<Model>(AssetType::MODEL, mesh->MeshPath.c_str());
-
                     }
 
                     // --- Submeshes Information ---
@@ -636,39 +635,81 @@ void InspectorWindow::Show()
 
             if (script && g_SelectedObject)
             {
-                // Transform* transform = &g_SelectedObject->transform;
-
                 ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
                 bool scriptOpen = ImGui::CollapsingHeader("Script##Main", ImGuiTreeNodeFlags_DefaultOpen);
                 ImGui::PopStyleColor();
 
-                // printf("%p\n", &transform);
                 if (scriptOpen)
                 {
-                    //    Define a maximum buffer size
+                    // Define a maximum buffer size for script path
                     const size_t BUFFER_SIZE = 256;
 
-                    // Allocate a buffer and initialize it with the current string
+                    // Allocate a buffer and initialize it with the current script path
                     char buffer[BUFFER_SIZE];
                     strncpy(buffer, script->ScriptPath.c_str(), BUFFER_SIZE - 1);
-
                     buffer[BUFFER_SIZE - 1] = '\0'; // Ensure null-termination
 
-                    // Render the InputText widget
+                    // Render the InputText widget for editing the script path
                     if (ImGui::InputText("Script Path", buffer, BUFFER_SIZE))
                     {
-
-                        // Update the string if user made changes
-                        script->ScriptPath = buffer;
+                        script->ScriptPath = buffer; // Update the script path if modified
                     }
 
+                    // Reload Script Button
                     if (ImGui::Button("Reload Script"))
                     {
-
                         if (script->Initialize())
                         {
                             script->Init();
                             g_LoggerWindow->AddLog("Reloaded Script: %s", ImVec4(0.0f, 1.0f, 0.0f, 1.0f), script->ScriptPath.c_str());
+                        }
+                    }
+
+                    // Assuming script->GetExposedVariables() returns std::unordered_map<std::string, LuaExposedVariant>
+                    auto exposedVariables = script->GetExposedVariables();
+
+                    for (const auto &[name, value] : exposedVariables)
+                    {
+                        ImGui::Text("%s:", name.c_str());
+
+                        if (std::holds_alternative<int>(value))
+                        {
+                            int intValue = std::get<int>(value);
+                            if (ImGui::InputInt(name.c_str(), &intValue))
+                            {
+                                script->UpdateVariable(name, intValue);
+                            }
+                        }
+                        else if (std::holds_alternative<float>(value))
+                        {
+                            float floatValue = std::get<float>(value);
+                            if (ImGui::InputFloat(name.c_str(), &floatValue))
+                            {
+                                script->UpdateVariable(name, floatValue);
+                            }
+                        }
+                        else if (std::holds_alternative<std::string>(value))
+                        {
+                            const std::string &strValue = std::get<std::string>(value);
+                            char buffer[256];
+                            strncpy(buffer, strValue.c_str(), sizeof(buffer));
+                            buffer[sizeof(buffer) - 1] = '\0'; // Ensure null termination
+                            if (ImGui::InputText(name.c_str(), buffer, sizeof(buffer)))
+                            {
+                                script->UpdateVariable(name, std::string(buffer));
+                            }
+                        }
+                        else if (std::holds_alternative<bool>(value))
+                        {
+                            bool boolValue = std::get<bool>(value);
+                            if (ImGui::Checkbox(name.c_str(), &boolValue))
+                            {
+                                script->UpdateVariable(name, boolValue);
+                            }
+                        }
+                        else
+                        {
+                            ImGui::TextDisabled("Unsupported Type");
                         }
                     }
                 }
