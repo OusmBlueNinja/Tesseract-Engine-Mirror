@@ -235,6 +235,6 @@ private:
     std::unordered_map<std::string, AssetVariant> m_AssetMap;
 
     AssetVariant loadAssetFromDisk(AssetType type, const std::string &path);
-    // Generate the unique key
+    // Generate the Key for each file
     std::string generateKey(AssetType type, const std::string &path);
 };

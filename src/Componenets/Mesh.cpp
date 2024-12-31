@@ -4,8 +4,10 @@
 #include "gcml.h"
 
 #include "../Engine/AssetManager.h"
+#include "Windows/LoggerWindow.h"
 
 extern AssetManager g_AssetManager;
+extern LoggerWindow *g_LoggerWindow;
 
 const std::string MeshComponent::name = "Mesh";
 
@@ -30,9 +32,7 @@ void MeshComponent::Update(float deltaTime)
     return;
 }
 
-
-
-void MeshComponent::Draw(Shader* shader)
+void MeshComponent::Draw(Shader *shader)
 {
     for (auto &submesh : submeshes)
     {
@@ -40,14 +40,11 @@ void MeshComponent::Draw(Shader* shader)
     }
 }
 
-
 YAML::Node MeshComponent::Serialize()
 {
     YAML::Node node;
 
     // Serialize each submesh
-    node["MeshPath"] = MeshPath;
-
     YAML::Node submeshesNode;
     for (const auto &submesh : submeshes)
     {
@@ -69,14 +66,20 @@ YAML::Node MeshComponent::Serialize()
 
         submeshesNode.push_back(submeshNode);
     }
+    node["MeshPath"] = MeshPath;
+    node["submeshes_len"] = submeshes.size();
     node["submeshes"] = submeshesNode;
-
 
     return node;
 }
 
 void MeshComponent::Deserialize(const YAML::Node &node)
 {
+    int submeshes_len = 0;
+    if (node["submeshes_len"])
+    {
+        submeshes_len = node["submeshes_len"].as<int>();
+    }
     if (node["MeshPath"])
     {
         MeshPath = node["MeshPath"].as<std::string>();
@@ -92,6 +95,11 @@ void MeshComponent::Deserialize(const YAML::Node &node)
         }
 
         DEBUG_PRINT("Model loaded successfully with %zu submeshes.", model->submeshes.size());
+
+        if (submeshes_len != static_cast<int>(model->submeshes.size()))
+        {
+            g_LoggerWindow->AddLog("[Mesh] Size Mismatch [%d:%d]: Check for Curupted Scene Files", submeshes_len, static_cast<int>(submeshes.size()));
+        }
 
         // Assign submeshes
         submeshes = std::move(model->submeshes);
@@ -128,8 +136,11 @@ void MeshComponent::Deserialize(const YAML::Node &node)
                     }
                 }
 
-
                 submeshes.push_back(std::move(submesh));
+            }
+            if (submeshes_len != static_cast<int>(submeshes.size()))
+            {
+                g_LoggerWindow->AddLog("[Mesh] Size Mismatch [%d:%d]: Check for Curupted Scene Files", submeshes_len, static_cast<int>(submeshes.size()));
             }
         }
     }

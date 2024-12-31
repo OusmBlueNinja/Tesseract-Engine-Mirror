@@ -7,157 +7,158 @@ Entities:
         Rotation: [0, -90, 0]
         Scale: [1, 1, 1]
       Mesh:
+        MeshPath: assets/models/sponza.obj
+        submeshes_len: 26
         submeshes:
-          - vao: 3
+          - vao: 2
             indexCount: 43452
-            textures:
-              - id: 30
-                type: texture_diffuse
-                path: textures/sponza_roof_diff.tga
-          - vao: 4
-            indexCount: 27552
-            textures:
-              - id: 31
-                type: texture_diffuse
-                path: textures/vase_dif.tga
-          - vao: 5
-            indexCount: 33024
-            textures:
-              - id: 21
-                type: texture_diffuse
-                path: textures/sponza_fabric_diff.tga
-          - vao: 6
-            indexCount: 54
-            textures: ~
-          - vao: 7
-            indexCount: 12258
-            textures:
-              - id: 11
-                type: texture_diffuse
-                path: textures/background.tga
-          - vao: 8
-            indexCount: 10416
-            textures:
-              - id: 12
-                type: texture_diffuse
-                path: textures/vase_plant.tga
-          - vao: 9
-            indexCount: 49536
-            textures:
-              - id: 23
-                type: texture_diffuse
-                path: textures/sponza_fabric_blue_diff.tga
-          - vao: 10
-            indexCount: 94308
-            textures:
-              - id: 29
-                type: texture_diffuse
-                path: textures/sponza_thorn_diff.tga
-          - vao: 11
-            indexCount: 49536
             textures:
               - id: 24
                 type: texture_diffuse
-                path: textures/sponza_fabric_green_diff.tga
-          - vao: 12
-            indexCount: 17628
-            textures:
-              - id: 15
-                type: texture_diffuse
-                path: textures/sponza_ceiling_a_diff.tga
-          - vao: 13
-            indexCount: 30504
-            textures:
-              - id: 13
-                type: texture_diffuse
-                path: textures/sponza_arch_diff.tga
-          - vao: 14
-            indexCount: 53064
-            textures:
-              - id: 33
-                type: texture_diffuse
-                path: textures/vase_round.tga
-          - vao: 15
-            indexCount: 69624
-            textures:
-              - id: 18
-                type: texture_diffuse
-                path: textures/sponza_column_b_diff.tga
-          - vao: 16
-            indexCount: 2640
-            textures:
-              - id: 20
-                type: texture_diffuse
-                path: textures/sponza_details_diff.tga
-          - vao: 17
-            indexCount: 43008
-            textures:
-              - id: 26
-                type: texture_diffuse
-                path: textures/sponza_curtain_blue_diff.tga
-          - vao: 18
-            indexCount: 0
-            textures: ~
-          - vao: 19
-            indexCount: 2388
-            textures:
-              - id: 14
-                type: texture_diffuse
-                path: textures/spnza_bricks_a_diff.tga
-          - vao: 20
-            indexCount: 21264
-            textures:
-              - id: 19
-                type: texture_diffuse
-                path: textures/sponza_column_c_diff.tga
-          - vao: 21
-            indexCount: 63
-            textures:
-              - id: 28
-                type: texture_diffuse
-                path: textures/sponza_floor_a_diff.tga
-          - vao: 22
-            indexCount: 43008
+                path: textures/sponza_roof_diff.tga
+          - vao: 3
+            indexCount: 27552
             textures:
               - id: 25
                 type: texture_diffuse
-                path: textures/sponza_curtain_green_diff.tga
-          - vao: 23
-            indexCount: 9126
+                path: textures/vase_dif.tga
+          - vao: 4
+            indexCount: 33024
             textures:
-              - id: 10
+              - id: 15
                 type: texture_diffuse
-                path: textures/lion.tga
-          - vao: 24
-            indexCount: 96
+                path: textures/sponza_fabric_diff.tga
+          - vao: 5
+            indexCount: 54
+            textures: ~
+          - vao: 6
+            indexCount: 12258
             textures:
-              - id: 16
+              - id: 5
                 type: texture_diffuse
-                path: textures/chain_texture.tga
-          - vao: 25
-            indexCount: 56832
+                path: textures/background.tga
+          - vao: 7
+            indexCount: 10416
             textures:
-              - id: 22
+              - id: 6
                 type: texture_diffuse
-                path: textures/sponza_curtain_diff.tga
-          - vao: 26
-            indexCount: 8448
+                path: textures/vase_plant.tga
+          - vao: 8
+            indexCount: 49536
             textures:
               - id: 17
                 type: texture_diffuse
-                path: textures/sponza_column_a_diff.tga
-          - vao: 27
-            indexCount: 49488
+                path: textures/sponza_fabric_blue_diff.tga
+          - vao: 9
+            indexCount: 94308
+            textures:
+              - id: 23
+                type: texture_diffuse
+                path: textures/sponza_thorn_diff.tga
+          - vao: 10
+            indexCount: 49536
+            textures:
+              - id: 18
+                type: texture_diffuse
+                path: textures/sponza_fabric_green_diff.tga
+          - vao: 11
+            indexCount: 17628
+            textures:
+              - id: 9
+                type: texture_diffuse
+                path: textures/sponza_ceiling_a_diff.tga
+          - vao: 12
+            indexCount: 30504
+            textures:
+              - id: 7
+                type: texture_diffuse
+                path: textures/sponza_arch_diff.tga
+          - vao: 13
+            indexCount: 53064
             textures:
               - id: 27
                 type: texture_diffuse
+                path: textures/vase_round.tga
+          - vao: 14
+            indexCount: 69624
+            textures:
+              - id: 12
+                type: texture_diffuse
+                path: textures/sponza_column_b_diff.tga
+          - vao: 15
+            indexCount: 2640
+            textures:
+              - id: 14
+                type: texture_diffuse
+                path: textures/sponza_details_diff.tga
+          - vao: 16
+            indexCount: 43008
+            textures:
+              - id: 20
+                type: texture_diffuse
+                path: textures/sponza_curtain_blue_diff.tga
+          - vao: 17
+            indexCount: 0
+            textures: ~
+          - vao: 18
+            indexCount: 2388
+            textures:
+              - id: 8
+                type: texture_diffuse
+                path: textures/spnza_bricks_a_diff.tga
+          - vao: 19
+            indexCount: 21264
+            textures:
+              - id: 13
+                type: texture_diffuse
+                path: textures/sponza_column_c_diff.tga
+          - vao: 20
+            indexCount: 63
+            textures:
+              - id: 22
+                type: texture_diffuse
+                path: textures/sponza_floor_a_diff.tga
+          - vao: 21
+            indexCount: 43008
+            textures:
+              - id: 19
+                type: texture_diffuse
+                path: textures/sponza_curtain_green_diff.tga
+          - vao: 22
+            indexCount: 9126
+            textures:
+              - id: 4
+                type: texture_diffuse
+                path: textures/lion.tga
+          - vao: 23
+            indexCount: 96
+            textures:
+              - id: 10
+                type: texture_diffuse
+                path: textures/chain_texture.tga
+          - vao: 24
+            indexCount: 56832
+            textures:
+              - id: 16
+                type: texture_diffuse
+                path: textures/sponza_curtain_diff.tga
+          - vao: 25
+            indexCount: 8448
+            textures:
+              - id: 11
+                type: texture_diffuse
+                path: textures/sponza_column_a_diff.tga
+          - vao: 26
+            indexCount: 49488
+            textures:
+              - id: 21
+                type: texture_diffuse
                 path: textures/sponza_flagpole_diff.tga
-          - vao: 28
+          - vao: 27
             indexCount: 59484
             textures:
-              - id: 32
+              - id: 26
                 type: texture_diffuse
                 path: textures/vase_hanging.tga
-        MeshPath: assets/models/sponza.obj
       ScriptComponent:
         ScriptPath: assets/scripts/BouncingItem.lua
