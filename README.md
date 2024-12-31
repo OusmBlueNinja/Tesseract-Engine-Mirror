@@ -30,6 +30,20 @@ Tesseract-Engine is a lightweight and powerful game engine designed for develope
 
 ### Note: Screenshots are sorted by version.
 
+
+### **Version 0.0.93**
+**Updates:**
+- Added support for OBJ Files with MTL Textures
+- Optimised OBJ Importer
+- Added `Engine.Expose("var name", <local var>)`
+    - This Exposes a variable to the editor GUI
+- Made the LUA Engine be a `require("engine")`
+- Remade Profiler to be more readable
+
+**Screenshot:**
+
+![](./assets/images/SS-Dev2_3.png)
+
 ### **Version 0.0.76**
 **Updates:**
 - **Engine Profiler**: Visualize frame resource usage for optimization.
