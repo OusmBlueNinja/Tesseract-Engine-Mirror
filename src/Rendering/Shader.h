@@ -3,7 +3,7 @@
 
 #include <string>
 #include <unordered_map>
-#include <GL/glew.h> // or appropriate OpenGL headers
+#include <GL/glew.h>   // or appropriate OpenGL headers
 #include <glm/glm.hpp> // For glm::mat4
 
 class Shader
@@ -13,7 +13,7 @@ public:
 
     // Constructors
     Shader();
-    Shader(const char* vertexPath, const char* fragmentPath);
+    Shader(const char *vertexPath, const char *fragmentPath);
     ~Shader(); // Destructor to clean up shader program
 
     // Use/activate the shader
@@ -24,6 +24,8 @@ public:
     void SetFloat(const std::string &name, float value) const;
     void SetBool(const std::string &name, bool value) const;
     void SetMat4(const std::string &name, const glm::mat4 &mat) const; // For setting 4x4 matrices
+    void SetSampler2D(const std::string &name, int textureUnit) const;
+    void SetVec3(const std::string &name, const glm::vec3 &value) const;
 
 private:
     // Caching uniform locations for performance
