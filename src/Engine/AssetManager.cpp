@@ -49,21 +49,44 @@ void AssetManager::DebugAssetMap()
     }
 }
 
-// Implementation of AssetManager::loadAssetFromDisk
 AssetManager::AssetVariant AssetManager::loadAssetFromDisk(AssetType type, const std::string &path)
 {
-    //DebugAssetMap();
+    // DebugAssetMap();
+    g_LoggerWindow->AddLog("[AssetManager] Loading asset: %s", path.c_str());
     LoadedAssets = m_AssetMap.size();
     switch (type)
     {
     case AssetType::TEXTURE:
-        return LoadTextureFromList(path); // Returns GLuint
+    {
+        GLuint textureID = LoadTextureFromList(path); // Returns GLuint
+        return std::make_shared<GLuint>(textureID);   // Wrap in shared_ptr
+    }
     case AssetType::SHADER:
-        return LoadShaderFromList(path); // Returns Shader*
-    case AssetType::SOUND:
-        return std::string("Loaded sound: " + path); // Example placeholder for sound
+    {
+        Shader* shaderPtr = LoadShaderFromList(path); // Returns Shader*
+        if (shaderPtr != nullptr)
+        {
+            // It's essential to ensure that shaderPtr is dynamically allocated and not managed elsewhere
+            return std::shared_ptr<Shader>(shaderPtr);
+        }
+        else
+        {
+            throw std::runtime_error("Failed to load shader: " + path);
+        }
+    }
     case AssetType::MODEL:
-        return LoadModelFromList(path); // Returns Model*
+    {
+        Model* modelPtr = LoadModelFromList(path); // Returns Model*
+        if (modelPtr != nullptr)
+        {
+            // It's essential to ensure that modelPtr is dynamically allocated and not managed elsewhere
+            return std::shared_ptr<Model>(modelPtr);
+        }
+        else
+        {
+            throw std::runtime_error("Failed to load model: " + path);
+        }
+    }
     default:
         throw std::invalid_argument("Unknown AssetType");
     }
@@ -79,13 +102,11 @@ GLuint LoadTextureFromList(const std::string &path)
     // --------------------------------------------
     // Load a texture with stb_image
     // --------------------------------------------
-    std::cout << "[AssetManager] Loading TEXTURE from: " << path << std::endl;
 
     int width, height, channels;
     unsigned char *data = stbi_load(path.c_str(), &width, &height, &channels, 0);
     if (!data)
     {
-        std::cerr << "[AssetManager] stb_image failed for: " << path << std::endl;
         return 0;
     }
 
@@ -118,32 +139,24 @@ GLuint LoadTextureFromList(const std::string &path)
     return texID;
 }
 
-Shader *LoadShaderFromList(const std::string &path)
+Shader* LoadShaderFromList(const std::string &path)
 {
-    // --------------------------------------------
-    // Load a shader using your existing "Shader" class
-    // --------------------------------------------
-    // Example usage: path = "shaders/UnlitMaterial" =>
-    //   loads "shaders/UnlitMaterial.vert" and "shaders/UnlitMaterial.frag"
-    std::cout << "[AssetManager] Loading SHADER from: " << path << std::endl;
-
-    // Create a new Shader object on the heap
-    Shader *newShader = new Shader();
 
     // Build actual paths from the base path
     std::string vertPath = path + ".vert";
     std::string fragPath = path + ".frag";
 
-    // Attempt to load
-    if (!newShader->Load(vertPath, fragPath))
+    // Create a new Shader object using the constructor that takes vertex and fragment paths
+    Shader *newShader = new Shader(vertPath.c_str(), fragPath.c_str());
+
+    // Check if shader compiled and linked successfully
+    if (newShader->ID == 0)
     {
-        std::cerr << "[AssetManager] Could not load shader: "
-                  << vertPath << " / " << fragPath << std::endl;
         delete newShader; // Cleanup
         return nullptr;
     }
 
-    // Return as void*
+    // Return the Shader pointer as void*
     return newShader;
 }
 
@@ -160,7 +173,7 @@ GLuint LoadTexture(const std::string &path, const std::string &directory)
     unsigned char *data = stbi_load(fullPath.c_str(), &width, &height, &channels, 0);
     if (!data)
     {
-        std::cerr << "[AssetManager] failed to load texture: " << fullPath << " " << stbi_failure_reason() << std::endl;
+        DEBUG_PRINT("[AssetManager] failed to load texture: %s: %s", fullPath.c_str(),stbi_failure_reason());
         return 0;
     }
 
@@ -203,30 +216,16 @@ GLuint LoadTexture(const std::string &path, const std::string &directory)
 
 Model* LoadModelFromList(const std::string &path)
 {
-    // --------------------------------------------
-    // Load an OBJ model
-    // --------------------------------------------
-    std::cout << "[AssetManager] Loading MODEL from: " << path << std::endl;
 
     std::ifstream objFile(path);
     if (!objFile.is_open())
     {
-        std::cerr << "[AssetManager] Failed to open OBJ file: " << path << std::endl;
         return nullptr;
     }
 
     std::vector<float> temp_positions;
     std::vector<float> temp_texCoords;
     std::vector<float> temp_normals;
-    std::vector<unsigned int> vertexIndices, texCoordIndices, normalIndices;
-
-    // Preallocate vectors with estimated sizes for performance
-    temp_positions.reserve(1000);
-    temp_texCoords.reserve(500);
-    temp_normals.reserve(500);
-    vertexIndices.reserve(3000);
-    texCoordIndices.reserve(3000);
-    normalIndices.reserve(3000);
 
     std::string directory;
     size_t lastSlash = path.find_last_of("/\\");
@@ -235,7 +234,12 @@ Model* LoadModelFromList(const std::string &path)
     else
         directory = "";
 
-    std::cout << "[AssetManager] Asset Directory: " << directory << std::endl;
+    
+    std::string currentMaterial = "default";
+
+    // Map material name to Submesh
+    std::unordered_map<std::string, Submesh> materialToSubmesh;
+    materialToSubmesh[currentMaterial] = Submesh();
 
     std::string line;
     std::string mtlFileName;
@@ -247,6 +251,7 @@ Model* LoadModelFromList(const std::string &path)
         std::istringstream iss(line);
         std::string prefix;
         iss >> prefix;
+
         if (prefix == "v")
         {
             float x, y, z;
@@ -271,6 +276,18 @@ Model* LoadModelFromList(const std::string &path)
             temp_normals.push_back(nx);
             temp_normals.push_back(-ny); // Inverted
             temp_normals.push_back(nz);
+        }
+        else if (prefix == "usemtl")
+        {
+            iss >> currentMaterial;
+            if (materialToSubmesh.find(currentMaterial) == materialToSubmesh.end())
+            {
+                materialToSubmesh[currentMaterial] = Submesh();
+            }
+        }
+        else if (prefix == "mtllib")
+        {
+            iss >> mtlFileName;
         }
         else if (prefix == "f")
         {
@@ -313,38 +330,75 @@ Model* LoadModelFromList(const std::string &path)
             // Triangulate if the face has more than 3 vertices
             for (size_t i = 1; i + 1 < faceVertices.size(); ++i)
             {
-                vertexIndices.push_back(std::get<0>(faceVertices[0]));
-                texCoordIndices.push_back(std::get<1>(faceVertices[0]));
-                normalIndices.push_back(std::get<2>(faceVertices[0]));
+                // Current material's submesh
+                Submesh &currentSubmesh = materialToSubmesh[currentMaterial];
 
-                vertexIndices.push_back(std::get<0>(faceVertices[i]));
-                texCoordIndices.push_back(std::get<1>(faceVertices[i]));
-                normalIndices.push_back(std::get<2>(faceVertices[i]));
+                auto addVertex = [&](unsigned int v, unsigned int t, unsigned int n) -> unsigned int {
+                    Vertex vertex;
+                    // OBJ indices are 1-based
+                    vertex.position[0] = temp_positions[(v - 1) * 3];
+                    vertex.position[1] = temp_positions[(v - 1) * 3 + 1];
+                    vertex.position[2] = temp_positions[(v - 1) * 3 + 2];
 
-                vertexIndices.push_back(std::get<0>(faceVertices[i + 1]));
-                texCoordIndices.push_back(std::get<1>(faceVertices[i + 1]));
-                normalIndices.push_back(std::get<2>(faceVertices[i + 1]));
+                    if (!temp_texCoords.empty() && t > 0)
+                    {
+                        vertex.texCoord[0] = temp_texCoords[(t - 1) * 2];
+                        vertex.texCoord[1] = temp_texCoords[(t - 1) * 2 + 1];
+                    }
+                    else
+                    {
+                        vertex.texCoord[0] = 0.0f;
+                        vertex.texCoord[1] = 0.0f;
+                    }
+
+                    if (!temp_normals.empty() && n > 0)
+                    {
+                        vertex.normal[0] = temp_normals[(n - 1) * 3];
+                        vertex.normal[1] = temp_normals[(n - 1) * 3 + 1];
+                        vertex.normal[2] = temp_normals[(n - 1) * 3 + 2];
+                    }
+                    else
+                    {
+                        vertex.normal[0] = 0.0f;
+                        vertex.normal[1] = 0.0f;
+                        vertex.normal[2] = 0.0f;
+                    }
+
+                    // Check if the vertex already exists in the submesh
+                    auto it = std::find(currentSubmesh.vertices.begin(), currentSubmesh.vertices.end(), vertex);
+                    if (it != currentSubmesh.vertices.end())
+                    {
+                        return static_cast<unsigned int>(std::distance(currentSubmesh.vertices.begin(), it));
+                    }
+                    else
+                    {
+                        currentSubmesh.vertices.push_back(vertex);
+                        return static_cast<unsigned int>(currentSubmesh.vertices.size() - 1);
+                    }
+                };
+
+                unsigned int idx0 = addVertex(std::get<0>(faceVertices[0]), std::get<1>(faceVertices[0]), std::get<2>(faceVertices[0]));
+                unsigned int idx1 = addVertex(std::get<0>(faceVertices[i]), std::get<1>(faceVertices[i]), std::get<2>(faceVertices[i]));
+                unsigned int idx2 = addVertex(std::get<0>(faceVertices[i + 1]), std::get<1>(faceVertices[i + 1]), std::get<2>(faceVertices[i + 1]));
+
+                currentSubmesh.indices.push_back(idx0);
+                currentSubmesh.indices.push_back(idx1);
+                currentSubmesh.indices.push_back(idx2);
             }
-        }
-        else if (prefix == "mtllib")
-        {
-            iss >> mtlFileName;
         }
     }
 
     objFile.close();
 
     // Load MTL file if specified
-    std::vector<Texture> textures;
+    std::unordered_map<std::string, std::vector<Texture>> materialTexturesMap;
     if (!mtlFileName.empty())
     {
         std::ifstream mtlFile(directory + mtlFileName);
         if (mtlFile.is_open())
         {
             std::string mtlLine;
-            std::string currentMaterial;
-            std::unordered_map<std::string, std::string> materialTextures;
-
+            std::string currentMaterialName;
             while (std::getline(mtlFile, mtlLine))
             {
                 if (mtlLine.empty() || mtlLine[0] == '#')
@@ -356,7 +410,7 @@ Model* LoadModelFromList(const std::string &path)
 
                 if (mtlPrefix == "newmtl")
                 {
-                    mtlIss >> currentMaterial;
+                    mtlIss >> currentMaterialName;
                 }
                 else if (mtlPrefix == "map_Kd")
                 {
@@ -371,7 +425,7 @@ Model* LoadModelFromList(const std::string &path)
                             texture.id = texID;
                             texture.type = "texture_diffuse";
                             texture.path = texturePath;
-                            textures.push_back(texture);
+                            materialTexturesMap[currentMaterialName].push_back(texture);
                         }
                     }
                 }
@@ -388,7 +442,7 @@ Model* LoadModelFromList(const std::string &path)
                             texture.id = texID;
                             texture.type = "texture_specular";
                             texture.path = texturePath;
-                            textures.push_back(texture);
+                            materialTexturesMap[currentMaterialName].push_back(texture);
                         }
                     }
                 }
@@ -405,7 +459,7 @@ Model* LoadModelFromList(const std::string &path)
                             texture.id = texID;
                             texture.type = "texture_normal";
                             texture.path = texturePath;
-                            textures.push_back(texture);
+                            materialTexturesMap[currentMaterialName].push_back(texture);
                         }
                     }
                 }
@@ -416,110 +470,47 @@ Model* LoadModelFromList(const std::string &path)
         }
         else
         {
-            std::cerr << "[AssetManager] Failed to open MTL file: " << mtlFileName << std::endl;
         }
     }
     else
     {
-        std::cout << "[AssetManager] No MTL file specified for OBJ: " << path << std::endl;
     }
 
-    if (textures.empty())
+    // Assign textures to submeshes based on their material
+    for (auto &pair : materialToSubmesh)
     {
-        std::cout << "[AssetManager] No textures found for OBJ: " << path << std::endl;
+        const std::string &materialName = pair.first;
+        Submesh &submesh = pair.second;
+
+        if (materialTexturesMap.find(materialName) != materialTexturesMap.end())
+        {
+            submesh.textures = materialTexturesMap[materialName];
+        }
+        else
+        {
+            // If no material textures found, you can assign default textures or leave it empty
+        }
+
+        // Initialize OpenGL buffers for the submesh
+        submesh.Initialize();
     }
-    else
+
+    if (materialToSubmesh.empty())
     {
-        std::cout << "[AssetManager] Loaded " << textures.size() << " textures for OBJ: " << path << std::endl;
+        return nullptr;
     }
 
     // Create Model object
     Model *model = new Model();
-    model->textures = textures;
 
-    // Populate vertices with unique vertices
-    std::unordered_map<std::string, unsigned int> uniqueVertices;
-    uniqueVertices.reserve(vertexIndices.size());
-
-    model->vertices.reserve(vertexIndices.size());
-    model->indices.reserve(vertexIndices.size());
-
-    for (size_t i = 0; i < vertexIndices.size(); ++i)
+    // Move submeshes to the model
+    for (auto &pair : materialToSubmesh)
     {
-        std::ostringstream keyStream;
-        keyStream << vertexIndices[i] << "/" << texCoordIndices[i] << "/" << normalIndices[i];
-        std::string key = keyStream.str();
-
-        auto it = uniqueVertices.find(key);
-        if (it == uniqueVertices.end())
-        {
-            Vertex vertex;
-            // OBJ indices are 1-based
-            vertex.position[0] = temp_positions[(vertexIndices[i] - 1) * 3];
-            vertex.position[1] = temp_positions[(vertexIndices[i] - 1) * 3 + 1];
-            vertex.position[2] = temp_positions[(vertexIndices[i] - 1) * 3 + 2];
-
-            if (!temp_texCoords.empty() && texCoordIndices[i] > 0)
-            {
-                vertex.texCoord[0] = temp_texCoords[(texCoordIndices[i] - 1) * 2];
-                vertex.texCoord[1] = temp_texCoords[(texCoordIndices[i] - 1) * 2 + 1];
-            }
-            else
-            {
-                vertex.texCoord[0] = 0.0f;
-                vertex.texCoord[1] = 0.0f;
-            }
-
-            if (!temp_normals.empty() && normalIndices[i] > 0)
-            {
-                vertex.normal[0] = temp_normals[(normalIndices[i] - 1) * 3];
-                vertex.normal[1] = temp_normals[(normalIndices[i] - 1) * 3 + 1];
-                vertex.normal[2] = temp_normals[(normalIndices[i] - 1) * 3 + 2];
-            }
-            else
-            {
-                vertex.normal[0] = 0.0f;
-                vertex.normal[1] = 0.0f;
-                vertex.normal[2] = 0.0f;
-            }
-
-            model->vertices.push_back(vertex);
-            unsigned int newIndex = static_cast<unsigned int>(model->vertices.size() - 1);
-            uniqueVertices[key] = newIndex;
-            model->indices.push_back(newIndex);
-        }
-        else
-        {
-            model->indices.push_back(it->second);
-        }
+        model->submeshes.emplace_back(std::move(pair.second));
     }
 
-    // Generate OpenGL buffers
-    glGenVertexArrays(1, &model->vao);
-    glGenBuffers(1, &model->vbo);
-    glGenBuffers(1, &model->ebo);
+    DEBUG_PRINT("[AssetManager] Loaded model with %lld submeshes.", model->submeshes.size());
 
-    glBindVertexArray(model->vao);
-
-    glBindBuffer(GL_ARRAY_BUFFER, model->vbo);
-    glBufferData(GL_ARRAY_BUFFER, model->vertices.size() * sizeof(Vertex), model->vertices.data(), GL_STATIC_DRAW);
-
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, model->ebo);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, model->indices.size() * sizeof(unsigned int), model->indices.data(), GL_STATIC_DRAW);
-
-    // Vertex positions
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)0);
-    // Texture coordinates
-    glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)(3 * sizeof(float)));
-    // Normals
-    glEnableVertexAttribArray(2);
-    glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)(5 * sizeof(float)));
-
-    glBindVertexArray(0);
-
-    // The textures are already loaded and stored in the model->textures vector
 
     return model;
 }

@@ -10,24 +10,22 @@ ProfilerWindow::ProfilerWindow()
 {
     // Initialize m_LastUpdateTime to force an immediate update on the first frame
     m_LastUpdateTime = std::chrono::steady_clock::now() - std::chrono::duration_cast<std::chrono::steady_clock::duration>(std::chrono::duration<double>(m_UpdateInterval));
-
 }
 
-
-
-
-std::vector<float> ProfilerWindow::ExponentialMovingAverage(const std::deque<double>& data, float alpha) {
+std::vector<float> ProfilerWindow::ExponentialMovingAverage(const std::deque<double> &data, float alpha)
+{
     std::vector<float> ema;
     ema.reserve(data.size());
     float prev = 0.0f;
-    for (const auto& val : data) {
+    for (const auto &val : data)
+    {
         prev = alpha * static_cast<float>(val) + (1.0f - alpha) * prev;
         ema.push_back(prev);
     }
     return ema;
 }
 
-void ProfilerWindow::UpdateHistory(const std::unordered_map<std::string, ProfileResult>& data, double totalFrameTime)
+void ProfilerWindow::UpdateHistory(const std::unordered_map<std::string, ProfileResult> &data, double totalFrameTime)
 {
     // Update total frame time history
     m_TotalFrameTimeHistory.push_back(totalFrameTime);
@@ -35,9 +33,9 @@ void ProfilerWindow::UpdateHistory(const std::unordered_map<std::string, Profile
         m_TotalFrameTimeHistory.pop_front();
 
     // Update each function's profiling history
-    for (const auto& [name, result] : data)
+    for (const auto &[name, result] : data)
     {
-        auto& history = m_ProfileHistories[name];
+        auto &history = m_ProfileHistories[name];
 
         // Update total time history
         history.totalTimeHistory.push_back(result.TotalTime);
@@ -57,7 +55,7 @@ void ProfilerWindow::UpdateHistory(const std::unordered_map<std::string, Profile
     }
 
     // Ensure that functions not present in the current frame retain their last TotalTime and AverageTime
-    for (auto& [name, history] : m_ProfileHistories)
+    for (auto &[name, history] : m_ProfileHistories)
     {
         if (data.find(name) == data.end())
         {
@@ -102,7 +100,7 @@ void ProfilerWindow::Show()
     // Begin ImGui window with improved styling
     ImGui::Begin("Profiler", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_HorizontalScrollbar);
 
-    const auto& data = Profiler::Get().GetLastFrameData();
+    const auto &data = Profiler::Get().GetLastFrameData();
 
     if (data.empty())
     {
@@ -115,7 +113,7 @@ void ProfilerWindow::Show()
     {
         // Calculate total frame time
         double totalFrameTime = 0.0;
-        for (const auto& [name, result] : data)
+        for (const auto &[name, result] : data)
         {
             totalFrameTime += result.TotalTime;
         }
@@ -151,9 +149,10 @@ void ProfilerWindow::RenderTable()
 
     // Sort functions by last Total Time descending
     std::sort(allData.begin(), allData.end(),
-        [](const std::pair<std::string, ProfileHistory>& a, const std::pair<std::string, ProfileHistory>& b) -> bool {
-            return a.second.totalTimeHistory.back() > b.second.totalTimeHistory.back();
-        });
+              [](const std::pair<std::string, ProfileHistory> &a, const std::pair<std::string, ProfileHistory> &b) -> bool
+              {
+                  return a.second.totalTimeHistory.back() > b.second.totalTimeHistory.back();
+              });
 
     // Add a filter input with enhanced styling
     ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(4, 2));
@@ -166,7 +165,7 @@ void ProfilerWindow::RenderTable()
 
     // Filtered data
     std::vector<std::pair<std::string, ProfileHistory>> filteredData;
-    for (const auto& [name, history] : allData)
+    for (const auto &[name, history] : allData)
     {
         if (filterStr.empty() || name.find(filterStr) != std::string::npos)
             filteredData.emplace_back(name, history);
@@ -188,7 +187,7 @@ void ProfilerWindow::RenderTable()
         // Alternate row colors for better readability
         bool rowBg = false;
 
-        for (const auto& [name, history] : filteredData)
+        for (const auto &[name, history] : filteredData)
         {
             ImGui::TableNextRow();
             rowBg = !rowBg;
@@ -236,9 +235,10 @@ void ProfilerWindow::RenderGraphs()
     // Collect and sort functions by last Total Time descending
     std::vector<std::pair<std::string, ProfileHistory>> sortedData(m_ProfileHistories.begin(), m_ProfileHistories.end());
     std::sort(sortedData.begin(), sortedData.end(),
-        [](const std::pair<std::string, ProfileHistory>& a, const std::pair<std::string, ProfileHistory>& b) -> bool {
-            return a.second.totalTimeHistory.back() > b.second.totalTimeHistory.back();
-        });
+              [](const std::pair<std::string, ProfileHistory> &a, const std::pair<std::string, ProfileHistory> &b) -> bool
+              {
+                  return a.second.totalTimeHistory.back() > b.second.totalTimeHistory.back();
+              });
 
     size_t displayCount = std::min<size_t>(5, sortedData.size()); // Limit to top 5 functions
 
@@ -249,7 +249,7 @@ void ProfilerWindow::RenderGraphs()
     float alpha = 0.2f; // Smoothing factor for EMA
     for (size_t i = 0; i < displayCount; ++i)
     {
-        const auto& [name, history] = sortedData[i];
+        const auto &[name, history] = sortedData[i];
         functionNames.push_back(name);
 
         // Smooth each function's data using EMA
@@ -259,7 +259,7 @@ void ProfilerWindow::RenderGraphs()
     // Find the longest data series and the maximum value for normalization
     size_t maxHistorySize = 0;
     float maxValue = 0.0f;
-    for (const auto& series : plotData)
+    for (const auto &series : plotData)
     {
         if (!series.empty())
         {
@@ -289,8 +289,7 @@ void ProfilerWindow::RenderGraphs()
                 nullptr,
                 0.0f,
                 static_cast<float>(maxValue) * 1.1f, // Add some padding to the max value
-                ImVec2(0, 100)
-            );
+                ImVec2(0, 100));
             ImGui::PopStyleColor();
         }
 

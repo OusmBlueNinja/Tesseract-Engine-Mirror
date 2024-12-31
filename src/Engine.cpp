@@ -105,6 +105,11 @@ bool MyEngine::Init(int width, int height, const std::string &title)
     (void)io;
     // Enable docking
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+    
+    #ifdef DEBUG
+    ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_DockingEnable | ImGuiConfigFlags_ViewportsEnable;
+    #endif
+
     // (Optional) Multi-viewport
     // io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
 
@@ -148,35 +153,6 @@ void MyEngine::Run()
     DEBUG_PRINT("[START] Engine Run ");
 
     DEBUG_PRINT("Transition to Editor");
-
-    g_AssetManager.loadAsset<GLuint>(AssetType::TEXTURE, "assets/textures/bricks.png");
-    g_AssetManager.loadAsset<GLuint>(AssetType::TEXTURE, "assets/textures/default.png");
-    g_AssetManager.loadAsset<GLuint>(AssetType::TEXTURE, "assets/textures/lush_grass.png");
-    g_AssetManager.loadAsset<GLuint>(AssetType::TEXTURE, "assets/textures/vegetation_tree_bark_40.png");
-    g_AssetManager.loadAsset<GLuint>(AssetType::TEXTURE, "assets/textures/ak-47.jpg");
-
-    g_AssetManager.loadAsset<GLuint>(AssetType::TEXTURE, "assets/textures/sky.png");
-
-    // Load a model
-    Model *modelPtr = g_AssetManager.loadAsset<Model *>(AssetType::MODEL, "assets/models/LowPolyFiatUNO.obj");
-    if (modelPtr == nullptr)
-    {
-        DEBUG_PRINT("Failed to load model.");
-    }
-    else
-    {
-        Model *model = reinterpret_cast<Model *>(modelPtr);
-        DEBUG_PRINT("Model loaded successfully with %lld vertices and %lld indices.", model->vertices.size(), model->indices.size());
-    }
-
-    Model *modelPtr4 = g_AssetManager.loadAsset<Model *>(AssetType::MODEL, "assets/models/shopping-cart.obj");
-
-    Model *model4 = reinterpret_cast<Model *>(modelPtr4);
-
-    DEBUG_PRINT("Model loaded successfully with %lld vertices and %lld indices.", model4->vertices.size(), model4->indices.size());
-
-    DEBUG_PRINT("Put componenent into Global Componenets Subsystem");
-
     // printf("%p\n", &g_GameObjects);
 
     // Possibly create more GameObjects with different positions or textures
@@ -224,7 +200,7 @@ void MyEngine::Run()
             ScopedTimer timer("SaveScene");
             m_FirstTickGameRunning = false;
 
-            std::string savePath = createTempFolder().string() + "TesseractEngineTempScene.scene";
+            std::string savePath = createTempFolder().string() + "/TesseractEngineTempScene.scene";
             DEBUG_PRINT("Save path: %s", savePath.c_str());
             g_SceneManager.SaveScene(g_GameObjects, savePath);
 
@@ -249,7 +225,7 @@ void MyEngine::Run()
             ScopedTimer timer("LoadScene");
             m_FirstTickGameRunning = true;
 
-            std::string loadPath = createTempFolder().string() + "TesseractEngineTempScene.scene";
+            std::string loadPath = createTempFolder().string() + "/TesseractEngineTempScene.scene";
 
             DEBUG_PRINT("Load path: %s", loadPath.c_str());
 

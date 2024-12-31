@@ -309,14 +309,14 @@ void RenderWindow::InitGLResources()
     // ----------------------------------------------------
 
     {
-        Shader *shaderAsset = g_AssetManager.loadAsset<Shader *>(AssetType::SHADER, "assets/shaders/UnlitMaterial");
+        std::shared_ptr<Shader> shaderAsset = g_AssetManager.loadAsset<Shader>(AssetType::SHADER, "assets/shaders/UnlitMaterial");
         if (!shaderAsset)
         {
             fprintf(stderr, "[RenderWindow] Failed to load shader via AssetManager.\n");
             return;
         }
         // Cast back to your Shader class
-        m_ShaderPtr = static_cast<Shader *>(shaderAsset);
+        m_ShaderPtr = shaderAsset.get();
     }
 
     // ----------------------------------------------------
@@ -348,7 +348,7 @@ void RenderWindow::InitGLResources()
     // 3) Load TEXTURE from the asset manager
     // ----------------------------------------------------
     {
-        GLuint texAsset = g_AssetManager.loadAsset<GLuint>(AssetType::TEXTURE, "assets/textures/wood.png");
+        std::shared_ptr<GLuint> texAsset = g_AssetManager.loadAsset<GLuint>(AssetType::TEXTURE, "assets/textures/wood.png");
         if (!texAsset)
         {
             fprintf(stderr, "[RenderWindow] Failed to load texture.\n");
@@ -356,7 +356,7 @@ void RenderWindow::InitGLResources()
         else
         {
             // Cast from void* to GLuint
-            m_TextureID = texAsset;
+            m_TextureID = *texAsset; // Assign the GLuint value
         }
     }
 
@@ -384,6 +384,11 @@ void CheckOpenGLError(const std::string &location)
 
 
 
+
+
+#include <glm/gtc/type_ptr.hpp> // For glm::value_ptr
+#include <algorithm>            // Ensure <algorithm> is included
+
 void RenderWindow::RenderSceneToFBO(bool *GameRunning)
 {
     m_RotationAngle += 0.001f; // Spin per frame
@@ -406,7 +411,6 @@ void RenderWindow::RenderSceneToFBO(bool *GameRunning)
     }
 
     m_ShaderPtr->Use();
-    GLuint programID = m_ShaderPtr->GetProgramID();
 
     // Define view and projection matrices once
     std::shared_ptr<CameraComponent> activeCamera = nullptr;
@@ -442,18 +446,8 @@ void RenderWindow::RenderSceneToFBO(bool *GameRunning)
         std::shared_ptr<TransformComponent> transform = obj->GetComponent<TransformComponent>();
         std::shared_ptr<MeshComponent> mesh = obj->GetComponent<MeshComponent>();
 
-        if (transform && mesh)
+        if (transform && mesh && mesh)
         {
-            // Validate VAO
-            if (mesh->vao == 0)
-            {
-                DEBUG_PRINT("[RenderWindow] Warning: Mesh VAO is not initialized.");
-                continue;
-            }
-
-            // Update triangle count
-            g_GPU_Triangles_drawn_to_screen += static_cast<int>(mesh->indexCount);
-
             // Apply transformations
             model = glm::translate(model, transform->position);
             model = glm::rotate(model, glm::radians(transform->rotation.x), glm::vec3(1.f, 0.f, 0.f));
@@ -461,108 +455,78 @@ void RenderWindow::RenderSceneToFBO(bool *GameRunning)
             model = glm::rotate(model, glm::radians(transform->rotation.z), glm::vec3(0.f, 0.f, 1.f));
             model = glm::scale(model, transform->scale);
 
-            // Compute MVP
+            // Compute MVP matrix
             glm::mat4 mvp = proj * view * model;
 
-            // Pass MVP to the shader
-            GLint mvpLoc = glGetUniformLocation(programID, "uMVP");
-            if(mvpLoc != -1)
-            {
-                glUniformMatrix4fv(mvpLoc, 1, GL_FALSE, glm::value_ptr(mvp));
-            }
-            else
-            {
-                DEBUG_PRINT("[RenderWindow] Warning: Uniform 'uMVP' not found in shader.");
-            }
+            // Pass MVP and Model matrices to the shader
+            m_ShaderPtr->SetMat4("uMVP", mvp);
+            m_ShaderPtr->SetMat4("uModel", model);
 
-            // Pass Model matrix to the shader
-            GLint modelLoc = glGetUniformLocation(programID, "uModel");
-            if(modelLoc != -1)
+            // Iterate through each submesh
+            for (const auto &submesh : mesh->submeshes)
             {
-                glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
-            }
-            else
-            {
-                DEBUG_PRINT("[RenderWindow] Warning: Uniform 'uModel' not found in shader.");
-            }
-
-            // -----------------------------------
-            // 2) Bind the object's diffuse textures
-            // -----------------------------------
-            // Define the maximum number of diffuse textures as per the shader
-            const int MAX_DIFFUSE = 32; // Must match the shader's MAX_DIFFUSE
-            int textureUnit = 0;
-
-            // Iterate through all textures and bind those with type "texture_diffuse"
-            for (const auto &texture : mesh->textures)
-            {
-                if (texture.type == "texture_diffuse")
+                // Validate VAO
+                if (submesh.vao == 0)
                 {
-                    if (textureUnit >= MAX_DIFFUSE)
-                    {
-                        DEBUG_PRINT("[RenderWindow] Warning: Exceeded maximum number of diffuse textures (%d) for shader.", MAX_DIFFUSE);
-                        break; // Prevent exceeding the array bounds in the shader
-                    }
-
-                    // Activate the appropriate texture unit
-                    glActiveTexture(GL_TEXTURE0 + textureUnit);
-                    glBindTexture(GL_TEXTURE_2D, texture.id);
-
-                    // Construct the uniform name dynamically (e.g., "uTextures.texture_diffuse[0]")
-                    std::string uniformName = "uTextures.texture_diffuse[" + std::to_string(textureUnit) + "]";
-                    GLint texLoc = glGetUniformLocation(programID, uniformName.c_str());
-
-                    if (texLoc != -1)
-                    {
-                        glUniform1i(texLoc, textureUnit);
-                    }
-
-                    textureUnit++;
+                    DEBUG_PRINT("[RenderWindow] Warning: Submesh VAO is not initialized.");
+                    continue;
                 }
-            }
 
-            // Assign default texture to unused texture slots
-            for(int i = textureUnit; i < MAX_DIFFUSE; ++i)
-            {
-                std::string uniformName = "uTextures.texture_diffuse[" + std::to_string(i) + "]";
-                GLint texLoc = glGetUniformLocation(programID, uniformName.c_str());
-                if(texLoc != -1)
+                // Update triangle count
+                g_GPU_Triangles_drawn_to_screen += static_cast<int>(submesh.indices.size() / 3);
+
+                // Bind textures for the submesh
+                // Assuming the shader has uniform arrays like uTextures.texture_diffuse[32]
+                const int MAX_DIFFUSE = 32; // Must match the shader's MAX_DIFFUSE
+                int textureUnit = 0;
+
+                // Iterate through all textures and bind those with type "texture_diffuse"
+                for (const auto &texture : submesh.textures)
                 {
-                    glUniform1i(texLoc, 0); // Assign texture unit 0 (ensure texture 0 is a valid default)
-                    CheckOpenGLError("After glUniform1i for default texture");
+                    if (texture.type == "texture_diffuse")
+                    {
+                        if (textureUnit >= MAX_DIFFUSE)
+                        {
+                            DEBUG_PRINT("[RenderWindow] Warning: Exceeded maximum number of diffuse textures (%d) for shader.", MAX_DIFFUSE);
+                            break; // Prevent exceeding the array bounds in the shader
+                        }
+
+                        // Activate the appropriate texture unit
+                        glActiveTexture(GL_TEXTURE0 + textureUnit);
+                        glBindTexture(GL_TEXTURE_2D, texture.id);
+
+                        // Construct the uniform name dynamically (e.g., "uTextures.texture_diffuse[0]")
+                        std::string uniformName = "uTextures.texture_diffuse[" + std::to_string(textureUnit) + "]";
+                        m_ShaderPtr->SetInt(uniformName, textureUnit);
+
+                        textureUnit++;
+                    }
                 }
-            }
 
-            // Set the number of active diffuse textures
-            GLint numDiffuseLoc = glGetUniformLocation(programID, "uNumDiffuseTextures");
-            if(numDiffuseLoc != -1)
-            {
-                glUniform1i(numDiffuseLoc, textureUnit);
-                CheckOpenGLError("After glUniform1i for uNumDiffuseTextures");
-            }
-            else
-            {
-                DEBUG_PRINT("[RenderWindow] Warning: Uniform 'uNumDiffuseTextures' not found in shader.");
-            }
+                // Assign default texture to unused texture slots to prevent shader errors
+                for(int i = textureUnit; i < MAX_DIFFUSE; ++i)
+                {
+                    std::string uniformName = "uTextures.texture_diffuse[" + std::to_string(i) + "]";
+                    m_ShaderPtr->SetInt(uniformName, 0); // Assign texture unit 0 (ensure texture 0 is a valid default)
+                }
 
-            // -----------------------------------
-            // 3) Draw the object's mesh
-            // -----------------------------------
-            glBindVertexArray(mesh->vao);
-            glDrawElements(GL_TRIANGLES, mesh->indexCount, GL_UNSIGNED_INT, nullptr);
-            glBindVertexArray(0);
-            CheckOpenGLError("After glDrawElements");
+                // Set the number of active diffuse textures
+                m_ShaderPtr->SetInt("uNumDiffuseTextures", textureUnit);
 
-            // Reset active texture
-            glActiveTexture(GL_TEXTURE0);
-            CheckOpenGLError("After glActiveTexture(GL_TEXTURE0)");
+                // Draw the submesh
+                glBindVertexArray(submesh.vao);
+                glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(submesh.indices.size()), GL_UNSIGNED_INT, nullptr);
+                glBindVertexArray(0);
+
+                // Reset active texture to default
+                glActiveTexture(GL_TEXTURE0);
+            }
         }
     }
 
-    // Cleanup
+    // Cleanup: Unbind the shader program
     glUseProgram(0);
-    CheckOpenGLError("After glUseProgram(0)");
 
+    // Unbind the FBO
     m_FBO.Unbind();
-    CheckOpenGLError("After FBO Unbind");
 }

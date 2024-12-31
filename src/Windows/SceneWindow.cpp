@@ -22,14 +22,6 @@ std::shared_ptr<GameObject> CreateDefaultCube()
     int newId = g_GameObjects.size();
     auto newGameObject = std::make_shared<GameObject>(newId, ("New GameObject"));
     newGameObject->AddComponent(std::make_shared<TransformComponent>()); // Ensure each entity has a TransformComponent by default
-    newGameObject->AddComponent(std::make_shared<MeshComponent>());      // Ensure each entity has a TransformComponent by default
-
-    // Suppose we loaded a VAO, an EBO with 36 indices for the cube,
-    // and a texture ID from the asset manager
-    std::shared_ptr<MeshComponent> mesh = newGameObject->GetComponent<MeshComponent>();
-
-    mesh->vao = CreateCubeVAO();
-    mesh->indexCount = 36;
 
     return newGameObject;
 }

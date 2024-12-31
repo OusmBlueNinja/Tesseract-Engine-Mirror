@@ -10,7 +10,7 @@ extern AssetManager g_AssetManager;
 const std::string MeshComponent::name = "Mesh";
 
 MeshComponent::MeshComponent()
-    : vao(0), indexCount(0), MeshPath("assets/models/DefaultMesh.obj")
+    : MeshPath("assets/models/DefaultMesh.obj")
 {
 }
 
@@ -26,28 +26,51 @@ const std::string &MeshComponent::GetStaticName()
 
 void MeshComponent::Update(float deltaTime)
 {
+    (void)deltaTime;
     return;
 }
+
+
+
+void MeshComponent::Draw(Shader* shader)
+{
+    for (auto &submesh : submeshes)
+    {
+        submesh.Draw(shader);
+    }
+}
+
+
 YAML::Node MeshComponent::Serialize()
 {
     YAML::Node node;
 
-    node["vao"] = static_cast<int>(vao);
-    node["indexCount"] = static_cast<int>(indexCount);
-
-    // Serialize Textures
-    YAML::Node texturesNode;
-    for (const auto &texture : textures)
-    {
-        YAML::Node texNode;
-        texNode["id"] = static_cast<int>(texture.id);
-        texNode["type"] = texture.type;
-        texNode["path"] = texture.path;
-        texturesNode.push_back(texNode);
-    }
-    node["textures"] = texturesNode;
-
+    // Serialize each submesh
     node["MeshPath"] = MeshPath;
+
+    YAML::Node submeshesNode;
+    for (const auto &submesh : submeshes)
+    {
+        YAML::Node submeshNode;
+        submeshNode["vao"] = static_cast<int>(submesh.vao);
+        submeshNode["indexCount"] = static_cast<int>(submesh.indices.size());
+
+        // Serialize Textures
+        YAML::Node texturesNode;
+        for (const auto &texture : submesh.textures)
+        {
+            YAML::Node texNode;
+            texNode["id"] = static_cast<int>(texture.id);
+            texNode["type"] = texture.type;
+            texNode["path"] = texture.path;
+            texturesNode.push_back(texNode);
+        }
+        submeshNode["textures"] = texturesNode;
+
+        submeshesNode.push_back(submeshNode);
+    }
+    node["submeshes"] = submeshesNode;
+
 
     return node;
 }
@@ -60,7 +83,7 @@ void MeshComponent::Deserialize(const YAML::Node &node)
 
         DEBUG_PRINT("Loading Mesh: %s", MeshPath.c_str());
 
-        Model *model = g_AssetManager.loadAsset<Model *>(AssetType::MODEL, MeshPath.c_str());
+        std::shared_ptr<Model> model = g_AssetManager.loadAsset<Model>(AssetType::MODEL, MeshPath.c_str());
 
         if (!model)
         {
@@ -68,66 +91,45 @@ void MeshComponent::Deserialize(const YAML::Node &node)
             return;
         }
 
-        DEBUG_PRINT("Model loaded successfully with %zu vertices and %zu indices.", 
-                    model->vertices.size(), model->indices.size());
+        DEBUG_PRINT("Model loaded successfully with %zu submeshes.", model->submeshes.size());
 
-        // Assign VAO and index count
-        if (model->vao != 0)
-        {
-            vao = model->vao;
-        }
-        else if (node["vao"])
-        {
-            vao = node["vao"].as<int>();
-        }
-
-        if (model->indices.size() != 0)
-        {
-            indexCount = static_cast<GLuint>(model->indices.size());
-        }
-        else if (node["indexCount"])
-        {
-            indexCount = node["indexCount"].as<int>();
-        }
-
-        // Assign Textures
-        if (!model->textures.empty())
-        {
-            textures = model->textures;
-        }
-        else if (node["textures"])
-        {
-            const YAML::Node &texturesNode = node["textures"];
-            for (const auto &texNode : texturesNode)
-            {
-                Texture texture;
-                texture.id = texNode["id"].as<int>();
-                texture.type = texNode["type"].as<std::string>();
-                texture.path = texNode["path"].as<std::string>();
-                textures.push_back(texture);
-            }
-        }
+        // Assign submeshes
+        submeshes = std::move(model->submeshes);
     }
     else
     {
-        if (node["vao"])
+        // Handle cases where submeshes are stored directly
+        if (node["submeshes"])
         {
-            vao = node["vao"].as<int>();
-        }
-        if (node["indexCount"])
-        {
-            indexCount = node["indexCount"].as<int>();
-        }
-        if (node["textures"])
-        {
-            const YAML::Node &texturesNode = node["textures"];
-            for (const auto &texNode : texturesNode)
+            const YAML::Node &submeshesNode = node["submeshes"];
+            for (const auto &submeshNode : submeshesNode)
             {
-                Texture texture;
-                texture.id = texNode["id"].as<int>();
-                texture.type = texNode["type"].as<std::string>();
-                texture.path = texNode["path"].as<std::string>();
-                textures.push_back(texture);
+                Submesh submesh;
+
+                if (submeshNode["vao"])
+                {
+                    submesh.vao = submeshNode["vao"].as<int>();
+                }
+                if (submeshNode["indexCount"])
+                {
+                    submesh.indices.reserve(submeshNode["indexCount"].as<int>());
+                    // Assuming indices are stored elsewhere or need to be loaded
+                }
+                if (submeshNode["textures"])
+                {
+                    const YAML::Node &texturesNode = submeshNode["textures"];
+                    for (const auto &texNode : texturesNode)
+                    {
+                        Texture texture;
+                        texture.id = texNode["id"].as<int>();
+                        texture.type = texNode["type"].as<std::string>();
+                        texture.path = texNode["path"].as<std::string>();
+                        submesh.textures.push_back(texture);
+                    }
+                }
+
+
+                submeshes.push_back(std::move(submesh));
             }
         }
     }

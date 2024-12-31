@@ -10,14 +10,17 @@
 #include <string>
 #include "Engine/AssetManager.h"
 
+// In MeshComponent.h
+
 class MeshComponent : public Component
 {
 public:
-    GLuint vao = 0;                   // Vertex Array Object
-    GLuint indexCount = 0;            // Number of indices to draw
-    std::vector<Texture> textures;    // List of textures associated with the mesh
-
+    std::vector<Submesh> submeshes;    // List of submeshes
     std::string MeshPath;
+
+    static const std::string name;
+
+
 
     MeshComponent();
     virtual const std::string& GetName() const override;
@@ -29,6 +32,9 @@ public:
     virtual YAML::Node Serialize() override;
     virtual void Deserialize(const YAML::Node& node) override;
 
-private:
-    static const std::string name;
+    // Render the mesh
+    void Draw(Shader* shader);
+
+
 };
+

@@ -10,6 +10,8 @@ extern std::vector<GameObject> g_GameObjects;
 extern GameObject *g_SelectedObject; // Pointer to the currently selected object
 extern std::shared_ptr<CameraComponent> g_RuntimeCameraObject;
 
+#include "Engine/AssetManager.h"
+extern AssetManager *g_AssetManager;
 extern LoggerWindow *g_LoggerWindow;
 
 void InspectorWindow::Show()
@@ -535,27 +537,16 @@ void InspectorWindow::Show()
 
             if (mesh && g_SelectedObject)
             {
+                // Set text color to white for visibility
                 ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
+
+                // Create a collapsing header for the MeshComponent
                 bool meshOpen = ImGui::CollapsingHeader("Mesh##Main", ImGuiTreeNodeFlags_DefaultOpen);
                 ImGui::PopStyleColor();
 
                 if (meshOpen)
                 {
-                    // --- VAO ---
-                    int vao = static_cast<int>(mesh->vao);
-                    if (ImGui::InputInt("VAO", &vao, 1, 0))
-                    {
-                        mesh->vao = static_cast<GLuint>(vao);
-                    }
-
-                    // --- Index Count ---
-                    int indexCount = static_cast<int>(mesh->indexCount);
-                    if (ImGui::InputInt("Index Count", &indexCount, 1, 0))
-                    {
-                        mesh->indexCount = static_cast<GLuint>(indexCount);
-                    }
-
-                    // --- Mesh Path ---
+                    // --- Mesh Path (Editable) ---
                     const size_t BUFFER_SIZE = 256;
                     char buffer[BUFFER_SIZE];
                     strncpy(buffer, mesh->MeshPath.c_str(), BUFFER_SIZE - 1);
@@ -565,100 +556,79 @@ void InspectorWindow::Show()
                     {
                         mesh->MeshPath = buffer;
                         // Optionally, trigger reloading the mesh if the path changes
-                        // e.g., g_AssetManager.loadAsset<Model *>(AssetType::MODEL, mesh->MeshPath.c_str());
+                        // Example:
+                        std::shared_ptr<Model> model = g_AssetManager->loadAsset<Model>(AssetType::MODEL, mesh->MeshPath.c_str());
+
                     }
 
-                    // --- Textures ---
+                    // --- Submeshes Information ---
                     ImGui::Separator();
-                    ImGui::Text("Textures:");
+                    ImGui::Text("Submeshes:");
 
-                    // Display list of textures
-                    float availableWidth = ImGui::GetContentRegionAvail().x;
-
-                    for (size_t i = 0; i < mesh->textures.size(); ++i)
+                    // Check if the model is loaded
+                    if (mesh)
                     {
-                        Texture &texture = mesh->textures[i];
-
-                        // Create a unique identifier for each texture section
-                        std::string header = "Texture " + std::to_string(i + 1) + "##" + std::to_string(i);
-
-
-                        // Collapsing header for each texture
-                        if (ImGui::CollapsingHeader(header.c_str(), ImGuiTreeNodeFlags_DefaultOpen))
+                        // Iterate through each Submesh
+                        for (size_t sm = 0; sm < mesh->submeshes.size(); ++sm)
                         {
-                            // --- Texture Type ---
-                            char typeBuffer[32];
-                            strncpy(typeBuffer, texture.type.c_str(), sizeof(typeBuffer) - 1);
-                            typeBuffer[sizeof(typeBuffer) - 1] = '\0';
+                            const Submesh &submesh = mesh->submeshes[sm];
+                            std::string header = "Submesh " + std::to_string(sm + 1) + "##Submesh" + std::to_string(sm);
 
-                            if (ImGui::InputText(("Type##" + std::to_string(i)).c_str(), typeBuffer, sizeof(typeBuffer)))
+                            // Create a collapsing header for each Submesh
+                            if (ImGui::CollapsingHeader(header.c_str(), ImGuiTreeNodeFlags_DefaultOpen))
                             {
-                                texture.type = std::string(typeBuffer);
-                                // Optionally, validate the type or restrict it to certain values
-                            }
+                                // --- Submesh VAO (Read-Only) ---
+                                ImGui::Text("VAO: %d", static_cast<int>(submesh.vao));
 
-                            // --- Texture ID ---
-                            int texID = static_cast<int>(texture.id);
-                            if (ImGui::InputInt(("Texture ID##" + std::to_string(i)).c_str(), &texID, 1, 0))
-                            {
-                                texture.id = static_cast<GLuint>(texID);
-                            }
+                                // --- Submesh Index Count (Read-Only) ---
+                                ImGui::Text("Index Count: %d", static_cast<int>(submesh.indices.size()));
 
-                            // --- Texture Path ---
-                            char pathBuffer[256];
-                            strncpy(pathBuffer, texture.path.c_str(), sizeof(pathBuffer) - 1);
-                            pathBuffer[sizeof(pathBuffer) - 1] = '\0';
+                                // --- Textures Associated with the Submesh ---
+                                ImGui::Separator();
+                                ImGui::Text("Textures:");
 
-                            if (ImGui::InputText(("Path##" + std::to_string(i)).c_str(), pathBuffer, sizeof(pathBuffer)))
-                            {
-                                texture.path = std::string(pathBuffer);
-                                // Optionally, trigger reloading the texture if the path changes
-                                // e.g., texture.id = g_AssetManager.loadTexture(texture.path, directory);
-                            }
+                                // Iterate through each Texture in the Submesh
+                                for (size_t i = 0; i < submesh.textures.size(); ++i)
+                                {
+                                    const Texture &texture = submesh.textures[i];
+                                    std::string texHeader = "Texture " + std::to_string(i + 1) + "##Submesh" + std::to_string(sm) + "_Texture" + std::to_string(i);
 
-                            // --- Texture Preview ---
-                            if (texture.id != 0)
-                            {
-                                // Retrieve the texture's width and height if needed
-                                // For demonstration, using a fixed size
-                                
-                                ImGui::Image(static_cast<ImTextureID>(texture.id), ImVec2(availableWidth, availableWidth), ImVec2(0, 0), ImVec2(1, 1));
-                            }
-                            else
-                            {
-                                ImGui::Text("No texture bound.");
-                            }
+                                    // Create a collapsing header for each Texture
+                                    if (ImGui::CollapsingHeader(texHeader.c_str(), ImGuiTreeNodeFlags_DefaultOpen))
+                                    {
+                                        // --- Texture Type (Read-Only) ---
+                                        ImGui::Text("Type: %s", texture.type.c_str());
 
-                            // --- Remove Texture Button ---
-                            std::string removeButtonLabel = "Remove##" + std::to_string(i);
-                            if (ImGui::Button(removeButtonLabel.c_str()))
-                            {
-                                mesh->textures.erase(mesh->textures.begin() + i);
-                                // Adjust index after removal
-                                ImGui::TreePop();
-                                break; // Exit the loop as the current index is invalidated
-                            }
+                                        // --- Texture ID (Read-Only) ---
+                                        ImGui::Text("Texture ID: %d", static_cast<int>(texture.id));
 
-                            ImGui::Separator();
+                                        // --- Texture Path (Read-Only) ---
+                                        ImGui::Text("Path: %s", texture.path.c_str());
+
+                                        // --- Texture Preview ---
+                                        if (texture.id != 0)
+                                        {
+                                            // Adjust the size as needed
+                                            ImVec2 imageSize = ImVec2(100, 100); // Example size
+                                            ImGui::Image(static_cast<ImTextureID>(texture.id), imageSize, ImVec2(0, 0), ImVec2(1, 1));
+                                        }
+                                        else
+                                        {
+                                            ImGui::Text("No texture bound.");
+                                        }
+
+                                        ImGui::Separator();
+                                    }
+                                }
+
+                                ImGui::Separator();
+                            }
                         }
                     }
-
-                    // --- Add New Texture Button ---
-                    // if (ImGui::Button("Add Texture"))
-                    //{
-                    //    // Define default values for the new texture
-                    //    Texture newTexture;
-                    //    newTexture.id = 0;                       // Assign a default or invalid texture ID
-                    //    newTexture.type = "texture_diffuse";     // Default type
-                    //    newTexture.path = "path/to/texture.png"; // Default path
-                    //
-                    //    mesh->textures.push_back(newTexture);
-                    //}
-                    //
-                    // --- Display All Textures ---
-                    // Optionally, display all textures in a separate section or after the list
-
-                
+                    else
+                    {
+                        ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "No model loaded.");
+                    }
                 }
             }
 

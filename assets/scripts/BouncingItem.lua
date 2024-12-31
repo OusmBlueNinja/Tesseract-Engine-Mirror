@@ -3,14 +3,17 @@ local Math = require("./assets/scripts/math") -- Require the enhanced math modul
 local Engine = require("./assets/scripts/engine")
 
 
+local GameObjectName = "Bacround"
+
+
 -- Variables to track elapsed time and rotation
 local elapsedTime = 0
-local rotationSpeed = 45 -- Degrees per second for spinning
+local rotationSpeed = 25 -- Degrees per second for spinning
 local new_rotation = 0
 
 -- Variables for bobbing effect
 local initial_position = {x = 0, y = 0, z = 0} -- To store the gun's initial position
-local bobAmplitude = 0.5 -- Amplitude of the bobbing (units)
+local bobAmplitude = 5 -- Amplitude of the bobbing (units)
 local bobFrequency = 0.5 -- Frequency of the bobbing (oscillations per second)
 
 -- Reference to the Gun GameObject and its Transform component
@@ -26,7 +29,7 @@ function OnInit()
 
 
     if not gun then
-        gun = Engine.GetGameObjectByTag("Gun")
+        gun = Engine.GetGameObjectByTag(GameObjectName)
         if gun then
             transform = gun:GetComponent("Transform")
             if transform then
@@ -68,7 +71,7 @@ end
 function OnUpdate(deltaTime)
     -- Ensure that the Gun and its Transform component are valid
     if not gun then
-        gun = Engine.GetGameObjectByTag("Gun")
+        gun = Engine.GetGameObjectByTag(GameObjectName)
         if gun then
             transform = gun:GetComponent("Transform")
             if transform then
