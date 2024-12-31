@@ -16,6 +16,47 @@ MeshComponent::MeshComponent()
 {
 }
 
+MeshComponent::~MeshComponent()
+{
+    for (auto &submesh : submeshes)
+    {
+        // Delete OpenGL buffers associated with the submesh
+        if (submesh.vbo != 0)
+        {
+            glDeleteBuffers(1, &submesh.vbo);
+            submesh.vbo = 0;
+        }
+        if (submesh.ebo != 0)
+        {
+            glDeleteBuffers(1, &submesh.ebo);
+            submesh.ebo = 0;
+        }
+        if (submesh.vao != 0)
+        {
+            glDeleteVertexArrays(1, &submesh.vao);
+            submesh.vao = 0;
+        }
+
+        // Clear textures associated with the submesh
+        for (const auto &texture : submesh.textures)
+        {
+            if (texture.id != 0)
+            {
+                glDeleteTextures(1, &texture.id);
+            }
+        }
+
+        // Clear submesh data
+        submesh.textures.clear();
+        submesh.vertices.clear();
+        submesh.indices.clear();
+    }
+
+    // Clear the submesh container
+    submeshes.clear();
+}
+
+
 const std::string &MeshComponent::GetName() const
 {
     return name;
@@ -25,6 +66,7 @@ const std::string &MeshComponent::GetStaticName()
 {
     return name;
 }
+
 
 void MeshComponent::Update(float deltaTime)
 {

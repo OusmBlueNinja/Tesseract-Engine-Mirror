@@ -23,6 +23,8 @@ public:
 
 
     MeshComponent();
+    ~MeshComponent();
+
     virtual const std::string& GetName() const override;
     static const std::string& GetStaticName();
 

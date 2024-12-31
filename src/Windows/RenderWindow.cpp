@@ -27,10 +27,7 @@ extern std::vector<std::shared_ptr<GameObject>> g_GameObjects;
 // Extern reference to our global (or extern) asset manager
 extern AssetManager g_AssetManager;
 
-
 extern std::shared_ptr<CameraComponent> g_RuntimeCameraObject;
-
-
 
 extern int g_GPU_Triangles_drawn_to_screen;
 
@@ -185,16 +182,12 @@ static unsigned int g_CubeIndices[] =
         // Bottom
         20, 21, 22, 22, 23, 20};
 
-
-
-
-bool PlayPauseButton(const char* label, bool* isPlaying)
+bool PlayPauseButton(const char *label, bool *isPlaying, ImVec2 Size)
 {
     // Define button size
-    ImVec2 buttonSize = ImVec2(50, 50); // Adjust size as needed
 
     // Begin the button
-    if (ImGui::Button(label, buttonSize))
+    if (ImGui::Button(label, Size))
     {
         // Toggle the state
         *isPlaying = !(*isPlaying);
@@ -208,7 +201,7 @@ bool PlayPauseButton(const char* label, bool* isPlaying)
     }
 
     // Get the current window's draw list
-    ImDrawList* draw_list = ImGui::GetWindowDrawList();
+    ImDrawList *draw_list = ImGui::GetWindowDrawList();
 
     // Get the position of the button
     ImVec2 button_pos = ImGui::GetItemRectMin();
@@ -216,7 +209,7 @@ bool PlayPauseButton(const char* label, bool* isPlaying)
     ImVec2 center = ImVec2(button_pos.x + button_size.x * 0.5f, button_pos.y + button_size.y * 0.5f);
 
     // Define icon size
-    float icon_size = 20.0f;
+    float icon_size = 0.4f * Size.x;
     float half_icon_size = icon_size / 2.0f;
 
     // Define colors
@@ -226,7 +219,7 @@ bool PlayPauseButton(const char* label, bool* isPlaying)
     {
         // Draw Pause Icon (two vertical bars)
         float bar_width = 4.0f;
-        float spacing = 6.0f;
+        float spacing = 0.1f * Size.x;
 
         // Left bar
         ImVec2 left_bar_p1 = ImVec2(center.x - spacing - bar_width, center.y - half_icon_size);
@@ -252,14 +245,12 @@ bool PlayPauseButton(const char* label, bool* isPlaying)
 
 
 
+
+
+
 void RenderWindow::Show(bool *GameRunning)
 {
-
     ImGui::Begin("Editor##EditorWindow");
-
-    ImVec2 size = ImGui::GetContentRegionAvail();
-    int w = static_cast<int>(size.x);
-    int h = static_cast<int>(size.y);
 
     if (!m_Initialized)
     {
@@ -267,22 +258,15 @@ void RenderWindow::Show(bool *GameRunning)
         m_Initialized = true;
     }
 
-    // Center the button
-    ImGui::SetCursorPosX((ImGui::GetWindowWidth() - 60) * 0.5f);
-
-    // Render the Play/Pause button
-    // Render the Play/Pause button
-    PlayPauseButton("##PlayPauseButton", GameRunning);
-        
-
+    ImVec2 size = ImGui::GetContentRegionAvail();
+    int w = static_cast<int>(size.x);
+    int h = static_cast<int>(size.y);
 
     // If there's space, render to the FBO, then show it as an ImGui image
-
     if (w > 0 && h > 0)
     {
         if (w != m_LastWidth || h != m_LastHeight)
         {
-
             m_FBO.Create(w, h);
             m_LastWidth = w;
             m_LastHeight = h;
@@ -290,17 +274,38 @@ void RenderWindow::Show(bool *GameRunning)
 
         RenderSceneToFBO(GameRunning);
 
+        // Render the image first
         ImGui::Image(m_FBO.GetTextureID(), size, ImVec2(0, 0), ImVec2(1, 1));
+
+        // Calculate button position to place it slightly right and down from the top-left of the image
+        ImVec2 imagePos = ImGui::GetItemRectMin();
+
+        // Add an offset to position the button
+        ImVec2 buttonOffset(10.0f, 10.0f); // Adjust these values as needed for the desired offset
+        ImVec2 buttonPos = ImVec2(imagePos.x + buttonOffset.x, imagePos.y + buttonOffset.y);
+
+        // Set cursor position for the button
+        ImGui::SetCursorScreenPos(buttonPos);
+
+        // Dynamically calculate button size based on window size
+        float buttonWidth = size.x * 0.03f; // 5% of the window width
+        ImVec2 buttonSize = ImVec2(buttonWidth, buttonWidth);
+
+        // Render the Play/Pause button with the calculated size
+        PlayPauseButton("##PlayPauseButton", GameRunning, buttonSize);
     }
     else
     {
         ImGui::Text("No space to render.");
     }
 
-    
-
     ImGui::End();
 }
+
+
+
+
+
 
 void RenderWindow::InitGLResources()
 {
@@ -365,7 +370,6 @@ void RenderWindow::InitGLResources()
     // ----------------------------------------------------
 }
 
-
 void CheckOpenGLError(const std::string &location)
 {
     GLenum err;
@@ -380,11 +384,6 @@ void CheckOpenGLError(const std::string &location)
         // Optionally, you can throw an exception or handle the error as needed
     }
 }
-
-
-
-
-
 
 #include <glm/gtc/type_ptr.hpp> // For glm::value_ptr
 #include <algorithm>            // Ensure <algorithm> is included
@@ -504,7 +503,7 @@ void RenderWindow::RenderSceneToFBO(bool *GameRunning)
                 }
 
                 // Assign default texture to unused texture slots to prevent shader errors
-                for(int i = textureUnit; i < MAX_DIFFUSE; ++i)
+                for (int i = textureUnit; i < MAX_DIFFUSE; ++i)
                 {
                     std::string uniformName = "uTextures.texture_diffuse[" + std::to_string(i) + "]";
                     m_ShaderPtr->SetInt(uniformName, 0); // Assign texture unit 0 (ensure texture 0 is a valid default)

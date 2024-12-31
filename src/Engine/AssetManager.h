@@ -194,23 +194,23 @@ public:
         std::string key = generateKey(type, path);
 
         // 2) Check if it’s already loaded
-        auto it = m_AssetMap.find(key);
-        if (it != m_AssetMap.end())
-        {
-            // Debug: Log the variant type
-            if (std::holds_alternative<std::shared_ptr<T>>(it->second))
-            {
-#ifdef DEBUG
-                DebugAssetMap();
-#endif
-                std::cout << "[AssetManager] Retrieved asset from cache: " << key << std::endl;
-                return std::get<std::shared_ptr<T>>(it->second);
-            }
-            else
-            {
-                throw std::runtime_error("Asset type mismatch for key: " + key);
-            }
-        }
+        // auto it = m_AssetMap.find(key);
+        // if (it != m_AssetMap.end())
+        //{
+        //    // Debug: Log the variant type
+        //    if (std::holds_alternative<std::shared_ptr<T>>(it->second))
+        //    {
+        //        #ifdef DEBUG
+        //        DebugAssetMap();
+        //        #endif
+        //        std::cout << "[AssetManager] Retrieved asset from cache: " << key << std::endl;
+        //        return std::get<std::shared_ptr<T>>(it->second);
+        //    }
+        //    else
+        //    {
+        //        throw std::runtime_error("Asset type mismatch for key: " + key);
+        //    }
+        //}
 
         // 3) Not loaded yet
         AssetVariant assetData = loadAssetFromDisk(type, path);
