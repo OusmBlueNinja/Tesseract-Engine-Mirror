@@ -213,19 +213,25 @@ public:
         //}
 
         // 3) Not loaded yet
-        AssetVariant assetData = loadAssetFromDisk(type, path);
 
-        if (assetData.valueless_by_exception())
+        try
         {
-            DEBUG_PRINT("[AssetManager] Failed to load asset: %s", path.c_str());
-            return nullptr; // For smart pointers, return nullptr on failure
+            AssetVariant assetData = loadAssetFromDisk(type, path);
+
+            if (assetData.valueless_by_exception())
+            {
+                DEBUG_PRINT("[AssetManager] Failed to load asset: %s", path.c_str());
+                return nullptr; // For smart pointers, return nullptr on failure
+            }
+            m_AssetMap[key] = assetData;
+            return std::get<std::shared_ptr<T>>(assetData);
+        }
+        catch (const std::exception &e)
+        {
+            std::cout << "Exception caught: " << e.what() << '\n';
         }
 
-        // 4) Store in cache
-        m_AssetMap[key] = assetData;
-
-        // 5) Return the loaded asset
-        return std::get<std::shared_ptr<T>>(assetData);
+        return nullptr;
     }
 
     void DebugAssetMap();

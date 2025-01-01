@@ -4,6 +4,7 @@
 #include "imgui.h"
 #include <cstdarg>
 #include <cstdio>
+#include "Icons.h"
 
 // Helper function to format strings
 static std::string FormatString(const char* fmt, va_list args) {
@@ -33,7 +34,7 @@ void LoggerWindow::AddLog(const char* fmt, std::optional<ImVec4> color, ...) {
 }
 
 void LoggerWindow::Show() {
-    ImGui::Begin("Logger##logger");
+    ImGui::Begin(ICON_FA_TERMINAL " Logger##logger");
 
     if (ImGui::Button("Clear")) {
         m_Logs.clear();

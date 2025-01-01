@@ -24,6 +24,8 @@ extern std::vector<std::shared_ptr<GameObject>> g_GameObjects;
 #include "Engine/AssetManager.h"
 #include "Rendering/Shader.h"
 
+#include "Icons.h"
+
 // Extern reference to our global (or extern) asset manager
 extern AssetManager g_AssetManager;
 
@@ -250,7 +252,7 @@ bool PlayPauseButton(const char *label, bool *isPlaying, ImVec2 Size)
 
 void RenderWindow::Show(bool *GameRunning)
 {
-    ImGui::Begin("Editor##EditorWindow");
+    ImGui::Begin(ICON_FA_GAMEPAD  " Editor##EditorWindow");
 
     if (!m_Initialized)
     {

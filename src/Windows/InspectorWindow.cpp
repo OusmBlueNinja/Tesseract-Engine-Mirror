@@ -6,6 +6,8 @@
 
 #include <vector>
 
+#include "Icons.h"
+
 extern std::vector<GameObject> g_GameObjects;
 extern GameObject *g_SelectedObject; // Pointer to the currently selected object
 extern std::shared_ptr<CameraComponent> g_RuntimeCameraObject;
@@ -21,7 +23,7 @@ void InspectorWindow::Show()
     ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(6, 4));
     ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(10, 10));
 
-    if (ImGui::Begin("Inspector##InspectorWindow"))
+    if (ImGui::Begin(ICON_FA_MAGNIFYING_GLASS  " Inspector##InspectorWindow"))
     {
         // Title label (white text)
         if (g_SelectedObject)
@@ -32,6 +34,8 @@ void InspectorWindow::Show()
                 ImGui::Text("No object selected.");
                 return;
             }
+
+            ImVec2 size = ImGui::GetContentRegionAvail();
 
             // Display object name and component count
             ImGui::Text("Editing Object: %s", g_SelectedObject->name.c_str());
@@ -177,7 +181,6 @@ void InspectorWindow::Show()
                 // printf("%p\n", &transform);
                 if (transformOpen)
                 {
-
                     if (ImGui::IsItemHovered())
                     {
                         ImGui::BeginTooltip();
@@ -185,196 +188,58 @@ void InspectorWindow::Show()
                         ImGui::EndTooltip();
                     }
 
-                    // -----------------------------------
-                    // Position
-                    // -----------------------------------
-                    ImGui::TextUnformatted("Position");
-                    ImGui::Spacing();
+                    const char *axisNames[3] = {"X", "Y", "Z"};
+                    static const ImVec4 colX = ImVec4(1.0f, 0.4f, 0.4f, 1.0f);
+                    static const ImVec4 colY = ImVec4(0.4f, 1.0f, 0.4f, 1.0f);
+                    static const ImVec4 colZ = ImVec4(0.4f, 0.4f, 1.0f, 1.0f);
 
+                    static const ImVec4 colXHover = ImVec4(1.0f, 0.6f, 0.6f, 1.0f);
+                    static const ImVec4 colYHover = ImVec4(0.6f, 1.0f, 0.6f, 1.0f);
+                    static const ImVec4 colZHover = ImVec4(0.6f, 0.6f, 1.0f, 1.0f);
+
+                    static const ImVec4 colXActive = ImVec4(1.0f, 0.2f, 0.2f, 1.0f);
+                    static const ImVec4 colYActive = ImVec4(0.2f, 1.0f, 0.2f, 1.0f);
+                    static const ImVec4 colZActive = ImVec4(0.2f, 0.2f, 1.0f, 1.0f);
+
+                    auto drawTransformRow = [&](const char *label, float *values)
                     {
-                        // We'll assign colors for X, Y, Z buttons
-                        // (normal, hovered, active)
-                        static const ImVec4 colX = ImVec4(1.0f, 0.4f, 0.4f, 1.0f);
-                        static const ImVec4 colXHover = ImVec4(1.0f, 0.6f, 0.6f, 1.0f);
-                        static const ImVec4 colXActive = ImVec4(1.0f, 0.2f, 0.2f, 1.0f);
+                        ImGui::TextUnformatted(label);
+                        ImGui::SameLine(90); // Align labels to a fixed width
 
-                        static const ImVec4 colY = ImVec4(0.4f, 1.0f, 0.4f, 1.0f);
-                        static const ImVec4 colYHover = ImVec4(0.6f, 1.0f, 0.6f, 1.0f);
-                        static const ImVec4 colYActive = ImVec4(0.2f, 1.0f, 0.2f, 1.0f);
+                        ImVec4 colors[3][3] = {
+                            {colX, colXHover, colXActive},
+                            {colY, colYHover, colYActive},
+                            {colZ, colZHover, colZActive}};
 
-                        static const ImVec4 colZ = ImVec4(0.4f, 0.4f, 1.0f, 1.0f);
-                        static const ImVec4 colZHover = ImVec4(0.6f, 0.6f, 1.0f, 1.0f);
-                        static const ImVec4 colZActive = ImVec4(0.2f, 0.2f, 1.0f, 1.0f);
-
-                        const char *axisNames[3] = {"X", "Y", "Z"};
-                        // We'll reference transform.position here
-                        float *pos = glm::value_ptr(transform->position);
-
-                        ImGui::PushID("PositionRow");
                         for (int i = 0; i < 3; i++)
                         {
-                            // Determine color set
-                            ImVec4 col, colH, colA;
-                            if (i == 0)
+                            ImGui::PushStyleColor(ImGuiCol_Button, colors[i][0]);
+                            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, colors[i][1]);
+                            ImGui::PushStyleColor(ImGuiCol_ButtonActive, colors[i][2]);
+                            std::string name = std::string(axisNames[i]) + "##" + std::string(axisNames[i]);
+                            if (ImGui::Button(name.c_str(), ImVec2(20, 0)))
                             {
-                                col = colX;
-                                colH = colXHover;
-                                colA = colXActive;
-                            }
-                            else if (i == 1)
-                            {
-                                col = colY;
-                                colH = colYHover;
-                                colA = colYActive;
-                            }
-                            else
-                            {
-                                col = colZ;
-                                colH = colZHover;
-                                colA = colZActive;
-                            }
-
-                            // Push color style for button
-                            ImGui::PushStyleColor(ImGuiCol_Button, col);
-                            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, colH);
-                            ImGui::PushStyleColor(ImGuiCol_ButtonActive, colA);
-
-                            // Small button with the axis name
-                            if (ImGui::Button(axisNames[i], ImVec2(20, 0)))
-                            {
-                                // No action on click, but we have a box with color
-                            }
-
-                            ImGui::PopStyleColor(3);
-
-                            ImGui::SameLine();
-                            ImGui::SetNextItemWidth(60.0f);
-                            ImGui::DragFloat((std::string("##Pos") + axisNames[i]).c_str(), &pos[i], 0.1f);
-
-                            if (i < 2)
-                                ImGui::SameLine(0, 15);
-                        }
-                        ImGui::PopID();
-                    }
-
-                    ImGui::Spacing();
-                    ImGui::Separator();
-
-                    // -----------------------------------
-                    // Rotation
-                    // -----------------------------------
-                    ImGui::TextUnformatted("Rotation");
-                    ImGui::Spacing();
-
-                    {
-                        // Same approach, but referencing transform.rotation
-                        const char *axisNames[3] = {"X", "Y", "Z"};
-                        float *rot = glm::value_ptr(transform->rotation);
-
-                        // We can reuse the same color sets
-                        ImGui::PushID("RotationRow");
-                        for (int i = 0; i < 3; i++)
-                        {
-                            // Decide color sets for X, Y, Z
-                            ImVec4 col, colH, colA;
-                            if (i == 0)
-                            {
-                                col = ImVec4(1.0f, 0.4f, 0.4f, 1.0f);
-                                colH = ImVec4(1.0f, 0.6f, 0.6f, 1.0f);
-                                colA = ImVec4(1.0f, 0.2f, 0.2f, 1.0f);
-                            }
-                            else if (i == 1)
-                            {
-                                col = ImVec4(0.4f, 1.0f, 0.4f, 1.0f);
-                                colH = ImVec4(0.6f, 1.0f, 0.6f, 1.0f);
-                                colA = ImVec4(0.2f, 1.0f, 0.2f, 1.0f);
-                            }
-                            else
-                            {
-                                col = ImVec4(0.4f, 0.4f, 1.0f, 1.0f);
-                                colH = ImVec4(0.6f, 0.6f, 1.0f, 1.0f);
-                                colA = ImVec4(0.2f, 0.2f, 1.0f, 1.0f);
-                            }
-
-                            ImGui::PushStyleColor(ImGuiCol_Button, col);
-                            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, colH);
-                            ImGui::PushStyleColor(ImGuiCol_ButtonActive, colA);
-
-                            if (ImGui::Button(axisNames[i], ImVec2(20, 0)))
-                            {
-                                // No action
+                                // No action on click
                             }
                             ImGui::PopStyleColor(3);
 
                             ImGui::SameLine();
-                            ImGui::SetNextItemWidth(60.0f);
-                            ImGui::DragFloat((std::string("##Rot") + axisNames[i]).c_str(), &rot[i], 0.1f);
+                            ImGui::SetNextItemWidth(60.0f); // Adjust field width to be more compact
+                            ImGui::DragFloat((std::string("##") + label + axisNames[i]).c_str(), &values[i], 0.1f);
 
                             if (i < 2)
-                                ImGui::SameLine(0, 15);
+                                ImGui::SameLine(0, 5); // Reduce spacing between fields
                         }
-                        ImGui::PopID();
-                    }
+                    };
 
-                    ImGui::Spacing();
-                    ImGui::Separator();
+                    // Position Row
+                    drawTransformRow("Position", glm::value_ptr(transform->position));
 
-                    // -----------------------------------
-                    // Scale
-                    // -----------------------------------
-                    ImGui::TextUnformatted("Scale");
-                    ImGui::Spacing();
+                    // Rotation Row
+                    drawTransformRow("Rotation", glm::value_ptr(transform->rotation));
 
-                    {
-                        const char *axisNames[3] = {"X", "Y", "Z"};
-                        float *scl = glm::value_ptr(transform->scale);
-
-                        ImGui::PushID("ScaleRow");
-                        for (int i = 0; i < 3; i++)
-                        {
-                            // same color approach
-                            ImVec4 col, colH, colA;
-                            if (i == 0)
-                            {
-                                col = ImVec4(1.0f, 0.4f, 0.4f, 1.0f);
-                                colH = ImVec4(1.0f, 0.6f, 0.6f, 1.0f);
-                                colA = ImVec4(1.0f, 0.2f, 0.2f, 1.0f);
-                            }
-                            else if (i == 1)
-                            {
-                                col = ImVec4(0.4f, 1.0f, 0.4f, 1.0f);
-                                colH = ImVec4(0.6f, 1.0f, 0.6f, 1.0f);
-                                colA = ImVec4(0.2f, 1.0f, 0.2f, 1.0f);
-                            }
-                            else
-                            {
-                                col = ImVec4(0.4f, 0.4f, 1.0f, 1.0f);
-                                colH = ImVec4(0.6f, 0.6f, 1.0f, 1.0f);
-                                colA = ImVec4(0.2f, 0.2f, 1.0f, 1.0f);
-                            }
-
-                            ImGui::PushStyleColor(ImGuiCol_Button, col);
-                            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, colH);
-                            ImGui::PushStyleColor(ImGuiCol_ButtonActive, colA);
-
-                            if (ImGui::Button(axisNames[i], ImVec2(20, 0)))
-                            {
-                                // No action
-                            }
-                            ImGui::PopStyleColor(3);
-
-                            ImGui::SameLine();
-                            ImGui::SetNextItemWidth(60.0f);
-                            ImGui::DragFloat((std::string("##Scl") + axisNames[i]).c_str(), &scl[i], 0.1f);
-
-                            if (i < 2)
-                                ImGui::SameLine(0, 15);
-                        }
-                        ImGui::PopID();
-                    }
-
-                    ImGui::Spacing();
-                    ImGui::Separator();
+                    // Scale Row
+                    drawTransformRow("Scale", glm::value_ptr(transform->scale));
                 }
             }
 
@@ -561,73 +426,76 @@ void InspectorWindow::Show()
                     }
 
                     // --- Submeshes Information ---
-                    ImGui::Separator();
-                    ImGui::Text("Submeshes:");
-
-                    // Check if the model is loaded
-                    if (mesh)
+                    ImGui::Indent();
+                    if (ImGui::CollapsingHeader("Submeshes", ImGuiTreeNodeFlags_None))
                     {
-                        // Iterate through each Submesh
-                        for (size_t sm = 0; sm < mesh->submeshes.size(); ++sm)
+
+                        // Check if the model is loaded
+                        if (mesh)
                         {
-                            const Submesh &submesh = mesh->submeshes[sm];
-                            std::string header = "Submesh " + std::to_string(sm + 1) + "##Submesh" + std::to_string(sm);
-
-                            // Create a collapsing header for each Submesh
-                            if (ImGui::CollapsingHeader(header.c_str(), ImGuiTreeNodeFlags_DefaultOpen))
+                            // Iterate through each Submesh
+                            for (size_t sm = 0; sm < mesh->submeshes.size(); ++sm)
                             {
-                                // --- Submesh VAO (Read-Only) ---
-                                ImGui::Text("VAO: %d", static_cast<int>(submesh.vao));
+                                const Submesh &submesh = mesh->submeshes[sm];
+                                std::string header = "Submesh " + std::to_string(sm + 1) + "##Submesh" + std::to_string(sm);
 
-                                // --- Submesh Index Count (Read-Only) ---
-                                ImGui::Text("Index Count: %d", static_cast<int>(submesh.indices.size()));
-
-                                // --- Textures Associated with the Submesh ---
-                                ImGui::Separator();
-                                ImGui::Text("Textures:");
-
-                                // Iterate through each Texture in the Submesh
-                                for (size_t i = 0; i < submesh.textures.size(); ++i)
+                                // Create a collapsing header for each Submesh
+                                if (ImGui::CollapsingHeader(header.c_str(), ImGuiTreeNodeFlags_None))
                                 {
-                                    const Texture &texture = submesh.textures[i];
-                                    std::string texHeader = "Texture " + std::to_string(i + 1) + "##Submesh" + std::to_string(sm) + "_Texture" + std::to_string(i);
+                                    // --- Submesh VAO (Read-Only) ---
+                                    ImGui::Text("VAO: %d", static_cast<int>(submesh.vao));
 
-                                    // Create a collapsing header for each Texture
-                                    if (ImGui::CollapsingHeader(texHeader.c_str(), ImGuiTreeNodeFlags_DefaultOpen))
+                                    // --- Submesh Index Count (Read-Only) ---
+                                    ImGui::Text("Index Count: %d", static_cast<int>(submesh.indices.size()));
+
+                                    // --- Textures Associated with the Submesh ---
+                                    ImGui::Separator();
+                                    ImGui::Text("Textures:");
+
+                                    // Iterate through each Texture in the Submesh
+                                    for (size_t i = 0; i < submesh.textures.size(); ++i)
                                     {
-                                        // --- Texture Type (Read-Only) ---
-                                        ImGui::Text("Type: %s", texture.type.c_str());
+                                        const Texture &texture = submesh.textures[i];
+                                        std::string texHeader = "Texture " + std::to_string(i + 1) + "##Submesh" + std::to_string(sm) + "_Texture" + std::to_string(i);
 
-                                        // --- Texture ID (Read-Only) ---
-                                        ImGui::Text("Texture ID: %d", static_cast<int>(texture.id));
-
-                                        // --- Texture Path (Read-Only) ---
-                                        ImGui::Text("Path: %s", texture.path.c_str());
-
-                                        // --- Texture Preview ---
-                                        if (texture.id != 0)
+                                        // Create a collapsing header for each Texture
+                                        if (ImGui::CollapsingHeader(texHeader.c_str(), ImGuiTreeNodeFlags_DefaultOpen))
                                         {
-                                            // Adjust the size as needed
-                                            ImVec2 imageSize = ImVec2(100, 100); // Example size
-                                            ImGui::Image(static_cast<ImTextureID>(texture.id), imageSize, ImVec2(0, 0), ImVec2(1, 1));
-                                        }
-                                        else
-                                        {
-                                            ImGui::Text("No texture bound.");
-                                        }
+                                            // --- Texture Type (Read-Only) ---
+                                            ImGui::Text("Type: %s", texture.type.c_str());
 
-                                        ImGui::Separator();
+                                            // --- Texture ID (Read-Only) ---
+                                            ImGui::Text("Texture ID: %d", static_cast<int>(texture.id));
+
+                                            // --- Texture Path (Read-Only) ---
+                                            ImGui::Text("Path: %s", texture.path.c_str());
+
+                                            // --- Texture Preview ---
+                                            if (texture.id != 0)
+                                            {
+                                                // Adjust the size as needed
+                                                ImGui::Image(static_cast<ImTextureID>(texture.id), ImVec2(size.x, size.x), ImVec2(0, 0), ImVec2(1, 1));
+                                            }
+                                            else
+                                            {
+                                                ImGui::Text("No texture bound.");
+                                            }
+
+                                            ImGui::Separator();
+                                        }
                                     }
-                                }
 
-                                ImGui::Separator();
+                                    ImGui::Separator();
+                                }
                             }
                         }
+                        else
+                        {
+                            ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "No model loaded.");
+                        }
                     }
-                    else
-                    {
-                        ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "No model loaded.");
-                    }
+                    ImGui::Unindent();
+
                 }
                 ImGui::Separator();
             }

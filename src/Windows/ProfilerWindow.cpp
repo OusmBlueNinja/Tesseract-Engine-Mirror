@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <string>
 #include <iostream> // For debug statements
+#include "Icons.h"
 
 // Constructor
 ProfilerWindow::ProfilerWindow()
@@ -98,7 +99,7 @@ void ProfilerWindow::Show()
     }
 
     // Begin ImGui window with improved styling
-    ImGui::Begin("Profiler", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_HorizontalScrollbar);
+    ImGui::Begin(ICON_FA_GAUGE  " Profiler", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_HorizontalScrollbar);
 
     const auto &data = Profiler::Get().GetLastFrameData();
 

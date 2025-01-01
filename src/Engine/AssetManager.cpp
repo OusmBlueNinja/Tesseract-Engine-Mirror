@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <fstream>
+#include <stdexcept>
 #include <sstream>
 #include <cstring>
 #include <GL/glew.h>
@@ -71,8 +72,9 @@ AssetManager::AssetVariant AssetManager::loadAssetFromDisk(AssetType type, const
         }
         else
         {
-            throw std::runtime_error("Failed to load shader: " + path);
+            g_LoggerWindow->AddLog("Failed to load Shader", ImVec4(1.0f, 0.01f, 0.01f, 1.0f));
         }
+        break;
     }
     case AssetType::MODEL:
     {
@@ -84,12 +86,15 @@ AssetManager::AssetVariant AssetManager::loadAssetFromDisk(AssetType type, const
         }
         else
         {
-            throw std::runtime_error("Failed to load model: " + path);
+            g_LoggerWindow->AddLog("Failed to load model: %s", ImVec4(1.0f, 0.01f, 0.01f, 1.0f), path.c_str());
         }
+        break;
     }
     default:
-        throw std::invalid_argument("Unknown AssetType");
+        g_LoggerWindow->AddLog("Unknown Asset Type", ImVec4(1.0f, 0.01f, 0.01f, 1.0f));
+        break;
     }
+    throw std::runtime_error("Failed to load Asset: " + path);
 }
 
 std::string AssetManager::generateKey(AssetType type, const std::string &path)

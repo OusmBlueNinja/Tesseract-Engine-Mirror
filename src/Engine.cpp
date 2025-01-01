@@ -21,6 +21,7 @@
 #include "Windows/LoggerWindow.h"
 #include "Windows/InspectorWindow.h"
 #include "Windows/SceneWindow.h"
+#include "Windows/Icons.h"
 
 #include "Windows/ProfilerWindow.h"
 
@@ -49,9 +50,7 @@ SceneManager g_SceneManager;
 
 std::vector<std::shared_ptr<GameObject>> g_GameObjects;
 
-
 std::shared_ptr<CameraComponent> g_RuntimeCameraObject;
-
 
 int g_GPU_Triangles_drawn_to_screen = 0;
 
@@ -105,10 +104,44 @@ bool MyEngine::Init(int width, int height, const std::string &title)
     (void)io;
     // Enable docking
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
-    
-    #ifdef DEBUG
+
+#ifdef DEBUG
     ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_DockingEnable | ImGuiConfigFlags_ViewportsEnable;
-    #endif
+#endif
+
+    // Path to your font files
+    const char *regularFontPath = "assets/fonts/Roboto-Medium.ttf"; // Replace with your font file path
+    const char *fontAwesomePath = "assets/fonts/fa-solid-900.ttf";  // Replace with Font Awesome font path
+
+    float fontSize = 16.0f; // Font size for both regular font and icons
+
+    // Load the regular font
+    ImFont *regularFont = io.Fonts->AddFontFromFileTTF(regularFontPath, fontSize);
+    if (!regularFont)
+    {
+        fprintf(stderr, "Failed to load regular font: %s\n", regularFontPath);
+        return false;
+    }
+
+    // Configure Font Awesome
+    ImFontConfig fontAwesomeConfig;
+    fontAwesomeConfig.MergeMode = true;     // Merge into the main font
+    fontAwesomeConfig.PixelSnapH = true;    // Snap pixels for better alignment
+    fontAwesomeConfig.GlyphOffset.y = 2.0f; // Adjust vertical alignment (tweak this value if needed)
+
+    // Define the glyph range for Font Awesome
+    static const ImWchar fontAwesomeRanges[] = {ICON_MIN_FA, ICON_MAX_FA, 0};
+
+    // Load Font Awesome and merge it into the regular font
+    ImFont *fontAwesomeFont = io.Fonts->AddFontFromFileTTF(fontAwesomePath, fontSize, &fontAwesomeConfig, fontAwesomeRanges);
+    if (!fontAwesomeFont)
+    {
+        fprintf(stderr, "Failed to load Font Awesome font: %s\n", fontAwesomePath);
+        return false;
+    }
+
+    // Build the fonts
+    io.Fonts->Build();
 
     // (Optional) Multi-viewport
     // io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
@@ -204,7 +237,6 @@ void MyEngine::Run()
             DEBUG_PRINT("Save path: %s", savePath.c_str());
             g_SceneManager.SaveScene(g_GameObjects, savePath);
 
-
             ScopedTimer LUA_INIT_timer("GameObjectsScriptInit");
             for (auto &Gameobject : g_GameObjects)
             {
@@ -212,7 +244,7 @@ void MyEngine::Run()
                 // Handle Components That Require Updates
                 std::shared_ptr<ScriptComponent> script = Gameobject->GetComponent<ScriptComponent>();
                 if (script)
-                { // Null Checks
+                {                                                                         // Null Checks
                     ScopedTimer Lua_timer("GameObjectLuaCall_INIT: " + Gameobject->name); // var has to be named that or it will be redecl
 
                     script->Init();
@@ -241,8 +273,6 @@ void MyEngine::Run()
             for (auto &Gameobject : g_GameObjects)
             {
 
-                
-
                 Gameobject->Update(frame_delta);
             }
         }
@@ -260,7 +290,7 @@ void MyEngine::Run()
             m_PerformanceWindow->Show(m_Fps, m_Ms); // FPS & ms
             m_LoggerWindow->Show();                 // Logs
             m_SceneWindow->Show();
-            //m_luaEditor->Show();
+            // m_luaEditor->Show();
 
             if (m_showProfiler)
             {
