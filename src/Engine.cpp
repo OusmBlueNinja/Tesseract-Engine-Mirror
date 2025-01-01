@@ -164,7 +164,7 @@ bool MyEngine::Init(int width, int height, const std::string &title)
 
     m_GameRunning = false;
     m_FirstTickGameRunning = true;
-    m_showProfiler = false;
+    m_showProfiler = true;
 
     g_LoggerWindow = m_LoggerWindow.get();
 

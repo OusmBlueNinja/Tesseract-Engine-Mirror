@@ -23,7 +23,7 @@ void InspectorWindow::Show()
     ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(6, 4));
     ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(10, 10));
 
-    if (ImGui::Begin(ICON_FA_MAGNIFYING_GLASS  " Inspector##InspectorWindow"))
+    if (ImGui::Begin(ICON_FA_MAGNIFYING_GLASS " Inspector##InspectorWindow"))
     {
         // Title label (white text)
         if (g_SelectedObject)
@@ -90,7 +90,7 @@ void InspectorWindow::Show()
 
             // Create a Combo Box for component selection
 
-            ImGui::Combo("##ComponentCombo", &selectedComponent, componentOptions, componentCount);
+            ImGui::Combo(" ##ComponentCombo", &selectedComponent, componentOptions, componentCount);
 
             // Add Button to add the selected component
             if (ImGui::Button("Add"))
@@ -175,7 +175,7 @@ void InspectorWindow::Show()
             {
 
                 ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
-                bool transformOpen = ImGui::CollapsingHeader("Transform##Main", ImGuiTreeNodeFlags_DefaultOpen);
+                bool transformOpen = ImGui::CollapsingHeader(ICON_FA_CIRCLE_NODES " Transform##Main", ImGuiTreeNodeFlags_DefaultOpen);
                 ImGui::PopStyleColor();
                 // Transform* transform = &g_SelectedObject->transform;
                 // printf("%p\n", &transform);
@@ -201,6 +201,8 @@ void InspectorWindow::Show()
                     static const ImVec4 colYActive = ImVec4(0.2f, 1.0f, 0.2f, 1.0f);
                     static const ImVec4 colZActive = ImVec4(0.2f, 0.2f, 1.0f, 1.0f);
 
+                    int ittr = 0;
+
                     auto drawTransformRow = [&](const char *label, float *values)
                     {
                         ImGui::TextUnformatted(label);
@@ -216,7 +218,7 @@ void InspectorWindow::Show()
                             ImGui::PushStyleColor(ImGuiCol_Button, colors[i][0]);
                             ImGui::PushStyleColor(ImGuiCol_ButtonHovered, colors[i][1]);
                             ImGui::PushStyleColor(ImGuiCol_ButtonActive, colors[i][2]);
-                            std::string name = std::string(axisNames[i]) + "##" + std::string(axisNames[i]);
+                            std::string name = std::string(axisNames[i]) + "##" + std::to_string(ittr);
                             if (ImGui::Button(name.c_str(), ImVec2(20, 0)))
                             {
                                 // No action on click
@@ -234,9 +236,11 @@ void InspectorWindow::Show()
 
                     // Position Row
                     drawTransformRow("Position", glm::value_ptr(transform->position));
+                    ittr += 1;
 
                     // Rotation Row
                     drawTransformRow("Rotation", glm::value_ptr(transform->rotation));
+                    ittr += 1;
 
                     // Scale Row
                     drawTransformRow("Scale", glm::value_ptr(transform->scale));
@@ -249,7 +253,7 @@ void InspectorWindow::Show()
                 ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
 
                 // Create a collapsing header for the Camera component
-                bool cameraOpen = ImGui::CollapsingHeader("Camera##CamerInspector", ImGuiTreeNodeFlags_DefaultOpen);
+                bool cameraOpen = ImGui::CollapsingHeader(ICON_FA_CAMERA "Camera##CamerInspector", ImGuiTreeNodeFlags_DefaultOpen);
                 ImGui::PopStyleColor(); // Revert text color
 
                 if (cameraOpen)
@@ -406,7 +410,7 @@ void InspectorWindow::Show()
                 ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
 
                 // Create a collapsing header for the MeshComponent
-                bool meshOpen = ImGui::CollapsingHeader("Mesh##Main", ImGuiTreeNodeFlags_DefaultOpen);
+                bool meshOpen = ImGui::CollapsingHeader(ICON_FA_CUBE " Mesh##Main", ImGuiTreeNodeFlags_DefaultOpen);
                 ImGui::PopStyleColor();
 
                 if (meshOpen)
@@ -434,6 +438,8 @@ void InspectorWindow::Show()
                         if (mesh)
                         {
                             // Iterate through each Submesh
+                            ImGui::Indent();
+
                             for (size_t sm = 0; sm < mesh->submeshes.size(); ++sm)
                             {
                                 const Submesh &submesh = mesh->submeshes[sm];
@@ -442,6 +448,10 @@ void InspectorWindow::Show()
                                 // Create a collapsing header for each Submesh
                                 if (ImGui::CollapsingHeader(header.c_str(), ImGuiTreeNodeFlags_None))
                                 {
+                                    ImGui::Indent();
+                                    size = ImGui::GetContentRegionAvail();
+
+
                                     // --- Submesh VAO (Read-Only) ---
                                     ImGui::Text("VAO: %d", static_cast<int>(submesh.vao));
 
@@ -484,10 +494,12 @@ void InspectorWindow::Show()
                                             ImGui::Separator();
                                         }
                                     }
+                                    ImGui::Unindent();
 
                                     ImGui::Separator();
                                 }
                             }
+                            ImGui::Unindent();
                         }
                         else
                         {
@@ -495,15 +507,13 @@ void InspectorWindow::Show()
                         }
                     }
                     ImGui::Unindent();
-
                 }
-                ImGui::Separator();
             }
 
             if (script && g_SelectedObject)
             {
                 ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
-                bool scriptOpen = ImGui::CollapsingHeader("Script##Main", ImGuiTreeNodeFlags_DefaultOpen);
+                bool scriptOpen = ImGui::CollapsingHeader(ICON_FA_SCROLL " Script##Main", ImGuiTreeNodeFlags_DefaultOpen);
                 ImGui::PopStyleColor();
 
                 if (scriptOpen)
